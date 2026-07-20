@@ -52,6 +52,9 @@ function isPageLine(line){ return /^P\s*\(?\s*\d+\s*\)?$/i.test(line) || /^Page\
 function isBatchLine(line){ return /^[A-Za-z][A-Za-z0-9\s&()'\/]+-\s*\d+$/i.test(line) || /^\d+(st|nd|rd|th)\s+Year/i.test(line); }
 function looksLikeMetadataTail(line){ return /^[A-Za-z].{0,60}$/.test(line) && /\d/.test(line) && !/[?.!]$/.test(line); }
 function isMetadataLine(line){ return isPageLine(line) || isBatchLine(line) || looksLikeMetadataTail(line); }
+function renderCheckbox(isSelected) {
+  return `<input type="checkbox" class="option-checkbox" ${isSelected ? 'checked' : ''} onclick="event.stopPropagation()">`;
+}
 function previewOption(option, idx){ return `${LETTERS[idx] || idx+1}) ${option}`; }
 function resolveCorrectIndex(options, correctAnswer, preferLetterOnly = false){
   if(!Array.isArray(options)||!options.length) return -1;
@@ -82,6 +85,28 @@ function getCorrectIndex(q){
   return q.correctIndex;
 }
 function isAnswerCorrect(q, idx){ return getCorrectIndex(q)===idx; }
+function getCorrectIndexes(q){
+  if(q.isMultipleAnswers && q.correctIndexes && q.correctIndexes.length > 0){
+    return q.correctIndexes;
+  }
+  if(q.correctIndex >= 0){
+    return [q.correctIndex];
+  }
+  return [];
+}
+function isMultipleAnswersQuestion(q){
+  return q.isMultipleAnswers === true;
+}
+function areAllAnswersCorrect(q, selectedIndices){
+  if(!q.isMultipleAnswers) return false;
+  const correctSet = new Set(q.correctIndexes || []);
+  const selectedSet = new Set(selectedIndices || []);
+  if(correctSet.size !== selectedSet.size) return false;
+  for(const idx of correctSet){
+    if(!selectedSet.has(idx)) return false;
+  }
+  return true;
+}
 function getCorrectAnswerText(q){
   if(q.correctAnswerText) return q.correctAnswerText;
   // استخدام الحرف إن وجد
@@ -848,23 +873,26 @@ function prepareQuestionForExam(question){
 }
 
 function startExamSession(questions, mode, direction, sourceLabel, extraMinutes, meta) {
-  state.currentExam = {
-    mode, direction,
-    sourceLabel: sourceLabel || 'custom',
-    collectionType: meta && meta.collectionType ? meta.collectionType : null,
-    displayLabel: meta && meta.displayLabel ? meta.displayLabel : (sourceLabel || 'Exam'),
-    historySubjectName: meta?.historySubjectName || null,
-    historyGroups: meta?.historyGroups || [],
-    questions: questions.map(q => Object.assign({}, q)),
-    currentIndex: 0,
-    answers: new Array(questions.length).fill(null),
-    firstAnswers: new Array(questions.length).fill(null),
-    startTime: Date.now(),
-    totalTime: (questions.length + (extraMinutes || 0)) * 60 * 1000,
-    submitted: false,
-    showAnswer: false,
-    masteredWrongIds: []
-  };
+   state.currentExam = {
+     mode: mode,
+     direction: direction,
+     sourceLabel: sourceLabel || 'custom',
+     collectionType: meta && meta.collectionType ? meta.collectionType : null,
+     displayLabel: meta && meta.displayLabel ? meta.displayLabel : (sourceLabel || 'Exam'),
+     historySubjectName: meta?.historySubjectName || null,
+     historyGroups: meta?.historyGroups || [],
+     questions: questions.map(q => Object.assign({}, q)),
+     currentIndex: 0,
+     answers: new Array(questions.length).fill(null),
+     firstAnswers: new Array(questions.length).fill(null),
+     startTime: Date.now(),
+     totalTime: (questions.length + (extraMinutes || 0)) * 60 * 1000,
+     submitted: false,
+     showAnswer: false,
+     masteredWrongIds: [],
+     multipleAnswerSelections: {},
+     selectedGroups: meta?.selectedGroups || []
+   };
 
   // إظهار أو إخفاء المؤقت وعداد التقدم حسب نمط الامتحان
   const timerEl = el('exam-timer');
@@ -885,8 +913,25 @@ function startExamSession(questions, mode, direction, sourceLabel, extraMinutes,
 }
 function renderRemoveWrongBtn(){ if(!state.currentExam || state.currentExam.collectionType!=='wrong' || state.currentExam.mode!=='training') return ''; const idx=state.currentExam.currentIndex; const q=state.currentExam.questions[idx]; const answered=state.currentExam.firstAnswers[idx]; if(answered===null || !isAnswerCorrect(q, answered) || !state.wrongQuestions.includes(q.id)) return ''; return `<button class="btn-secondary mt-20" onclick="confirmRemoveCurrentWrong()">✅ إزالة السؤال من الأخطاء</button>`; }
 function startSpecialExam(questions, mode, direction){ startExamSession(shuffleArray(questions.slice()).map(prepareQuestionForExam), mode, direction||'twoway', 'special', 5, { collectionType:null, displayLabel:'Special Exam', historySubjectName:'Special Exam', historyGroups:[] }); }
-
-function renderOptionButton(opt, i, idx, showAnswerState, selectedIndex, correctIdx){ let cls='option-btn'; if(selectedIndex===i) cls+=' selected'; if(showAnswerState){ if(i===correctIdx) cls+=' correct'; else if(selectedIndex===i && i!==correctIdx) cls+=' wrong'; } return `<button class="${cls}" onclick="selectOption(${i})"><span class="option-label">${LETTERS[i]})</span>${escapeHtml(cleanOptionDisplay(opt))}</button>`; }
+function renderOptionButton(opt, i, idx, showAnswerState, selectedIndices, correctIdx, isMultiple){
+  let cls='option-btn';
+  if(isMultiple){
+    const isSelected = Array.isArray(selectedIndices) && selectedIndices.includes(i);
+    if(isSelected) cls+=' selected';
+    if(showAnswerState){
+      if(Array.isArray(correctIdx) && correctIdx.includes(i)) cls+=' correct';
+      else if(showAnswerState && Array.isArray(correctIdx) && correctIdx.length > 0 && !correctIdx.includes(i) && isSelected) cls+=' wrong';
+    }
+    return `<button class="${cls}" onclick="selectOption(${i})">${renderCheckbox(isSelected)}<span class="option-letter">${LETTERS[i]}</span>) ${cleanOptionDisplay(opt)}</button>`;
+  } else {
+    if(selectedIndices===i) cls+=' selected';
+    if(showAnswerState){
+      if(i===correctIdx) cls+=' correct';
+      else if(selectedIndices===i && i!==correctIdx) cls+=' wrong';
+    }
+    return `<button class="${cls}" onclick="selectOption(${i})"><span class="option-letter">${LETTERS[i]}</span>) ${cleanOptionDisplay(opt)}</button>`;
+  }
+}
 function renderExam(){
   if(!state.currentExam) return;
   const t=theme();
@@ -913,17 +958,178 @@ function renderExam(){
   const correctIdx=getCorrectIndex(q);
   const showAnswerState=state.currentExam.mode==='training' && state.currentExam.showAnswer;
   const fav=state.favorites.includes(q.id);
+  let selectedIndices = state.currentExam.answers[idx];
+let correctIndexes = correctIdx;
+if(isMultipleAnswersQuestion(q)){
+  selectedIndices = state.currentExam.multipleAnswerSelections && state.currentExam.multipleAnswerSelections[idx] ? state.currentExam.multipleAnswerSelections[idx] : [];
+  correctIndexes = q.correctIndexes || [];
+}
+const optionsHtml = q.options.map((opt, i) => renderOptionButton(opt, i, idx, showAnswerState, selectedIndices, correctIndexes, isMultipleAnswersQuestion(q))).join('');
   const answerSummaryHtml = showAnswerState ? `<div class="answer-summary"><strong>Correct Answer:</strong> <span class="answer-value">${escapeHtml(getFormattedCurrentCorrectAnswer(q))}</span></div>` : '';
   el('question-container').innerHTML=`<div class="question-header"><span class="question-number">Q${escapeHtml(q.number||String(idx+1))}</span><div class="question-actions"><button class="icon-btn ${fav?'active':''}" onclick="toggleFavorite('${q.id}')">💚</button><button class="icon-btn" onclick="toggleQuestionLocation()">${t.icons.location}</button></div></div><p class="question-text">${escapeHtml(q.text)}</p><div class="options-list">${q.options.map((opt,i)=>renderOptionButton(opt,i,idx,showAnswerState,state.currentExam.answers[idx],correctIdx)).join('')}</div>${answerSummaryHtml}<div class="explanation-box ${showAnswerState?'visible':''}"><strong>Explanation:</strong> ${escapeHtml(q.explanation||'No explanation available.')}</div>${renderRemoveWrongBtn()}`;
   el('question-container').classList.add('exam-content-ltr');
   renderExamNav();
 }
 function renderGrid(){ if(!state.currentExam) return; const grid=el('question-grid'); grid.innerHTML=''; state.currentExam.questions.forEach((q,idx)=>{ let cls='grid-btn'; if(idx===state.currentExam.currentIndex) cls+=' current'; else if(state.currentExam.answers[idx]!==null){ if(state.currentExam.mode==='training' && state.currentExam.firstAnswers[idx]!==null) cls+=isAnswerCorrect(q,state.currentExam.firstAnswers[idx])?' answered':' wrong'; else cls+=' answered'; } if(state.currentExam.direction==='oneway' && idx<state.currentExam.currentIndex) cls+=' disabled'; const btn=document.createElement('button'); btn.className=cls; btn.textContent=String(idx+1); btn.onclick=()=>navigateToQuestion(idx); grid.appendChild(btn); }); }
+function renderExamTitle(){
+  if(!state.currentExam) return;
+  const container = el('question-grid');
+  if(!container) return;
+  const selectedGroups = state.currentExam.selectedGroups || [];
+  const subjects = state.subjects || [];
+  let titleText = '';
+  const groupsWithLectures = [];
+  if(selectedGroups && selectedGroups.length > 0){
+    for(const groupId of selectedGroups){
+      const subject = subjects.find(s => s.lectures && s.lectures.some(l => l.id === groupId)) ||
+                     subjects.find(s => s.ai && s.ai.some(l => l.id === groupId)) ||
+                     subjects.find(s => s.years && s.years.some(l => l.id === groupId));
+      if(subject){
+        const lecture = subject.lectures && subject.lectures.find(l => l.id === groupId) ||
+                       subject.ai && subject.ai.find(l => l.id === groupId) ||
+                       subject.years && subject.years.find(l => l.id === groupId);
+        if(lecture){
+          groupsWithLectures.push({subject: subject.name, lecture: lecture.name});
+        }
+      }
+    }
+  }
+  if(groupsWithLectures.length === 1){
+    titleText = `${groupsWithLectures[0].subject} - ${groupsWithLectures[0].lecture}`;
+  } else if(groupsWithLectures.length > 1){
+    const subjectName = groupsWithLectures[0].subject;
+    const allSameSubject = groupsWithLectures.every(g => g.subject === subjectName);
+    if(allSameSubject){
+      titleText = subjectName;
+    }
+  }
+  const titleEl = container.parentElement.querySelector('.exam-grid-title');
+  if(titleEl){
+    titleEl.textContent = titleText;
+  }
+}
+
+function toggleExamTitleHelp(){
+  let popup = document.querySelector('.exam-title-help-popup');
+  if(popup){
+    popup.remove();
+    return;
+  }
+  const selectedGroups = state.currentExam.selectedGroups || [];
+  const subjects = state.subjects || [];
+  const groupsWithLectures = [];
+  if(selectedGroups && selectedGroups.length > 0){
+    for(const groupId of selectedGroups){
+      const subject = subjects.find(s => s.lectures && s.lectures.some(l => l.id === groupId)) ||
+                     subjects.find(s => s.ai && s.ai.some(l => l.id === groupId)) ||
+                     subjects.find(s => s.years && s.years.some(l => l.id === groupId));
+      if(subject){
+        const lecture = subject.lectures && subject.lectures.find(l => l.id === groupId) ||
+                       subject.ai && subject.ai.find(l => l.id === groupId) ||
+                       subject.years && subject.years.find(l => l.id === groupId);
+        if(lecture){
+          groupsWithLectures.push(`${lecture.name}`);
+        }
+      }
+    }
+  }
+  if(groupsWithLectures.length <= 1) return;
+  popup = document.createElement('div');
+  popup.className = 'exam-title-help-popup';
+  popup.innerHTML = groupsWithLectures.map(name => `<div>${name}</div>`).join('');
+  document.body.appendChild(popup);
+  const helpBtn = document.querySelector('.exam-title-help');
+  if(helpBtn){
+    const rect = helpBtn.getBoundingClientRect();
+    popup.style.top = (rect.bottom + 8) + 'px';
+    popup.style.left = (rect.left - popup.offsetWidth + 30) + 'px';
+  }
+  document.addEventListener('click', closeExamTitleHelpPopup);
+  document.addEventListener('scroll', closeExamTitleHelpPopup);
+  document.addEventListener('wheel', closeExamTitleHelpPopup);
+}
+
+function closeExamTitleHelpPopup(){
+  const popup = document.querySelector('.exam-title-help-popup');
+  if(popup){
+    popup.remove();
+  }
+  document.removeEventListener('click', closeExamTitleHelpPopup);
+  document.removeEventListener('scroll', closeExamTitleHelpPopup);
+  document.removeEventListener('wheel', closeExamTitleHelpPopup);
+}
 function renderExamNav(){ if(!state.currentExam) return; const nav=el('exam-nav'); const idx=state.currentExam.currentIndex, last=state.currentExam.questions.length-1; let prevBtn='<span></span>', nextBtn='<span></span>'; if(state.currentExam.direction==='twoway' && idx>0) prevBtn='<button class="btn-secondary" onclick="prevQuestion()">Previous ←</button>'; if(state.currentExam.mode==='training'){ if(state.currentExam.showAnswer) nextBtn=idx<last?'<button class="btn-primary" onclick="nextQuestion()">Next →</button>':'<button class="btn-primary" onclick="finishExam()">Finish</button>'; else if(state.currentExam.answers[idx]!==null) nextBtn='<button class="btn-small" onclick="showAnswer()">Show Answer</button>'; } else if(state.currentExam.answers[idx]!==null) nextBtn=idx<last?'<button class="btn-primary" onclick="nextQuestion()">Next →</button>':'<button class="btn-primary" onclick="finishExam()">Finish</button>'; nav.innerHTML=prevBtn + nextBtn; }
-function selectOption(optionIndex){ if(!state.currentExam || state.currentExam.submitted) return; if(state.currentExam.mode==='training' && state.currentExam.showAnswer) return; const idx=state.currentExam.currentIndex; const q=state.currentExam.questions[idx]; state.currentExam.answers[idx]=optionIndex; if(state.currentExam.firstAnswers[idx]===null) state.currentExam.firstAnswers[idx]=optionIndex; const correct=isAnswerCorrect(q,optionIndex); if(state.currentExam.mode==='training'){ if(state.settings.feedbackEnabled) playEffectSound(correct?'right':'wrong'); if(correct){ state.currentExam.showAnswer=true; if(state.settings.animations!==false) showFireworks(48,12); } else { if(!state.wrongQuestions.includes(q.id)){ state.wrongQuestions.push(q.id); saveWrongQuestions(); } showToast(themeWrongMessage(),'error'); } saveExamState(); renderExam(); } else { saveExamState(); renderExam(); } }
+function selectOption(optionIndex){
+  if(!state.currentExam || state.currentExam.submitted) return;
+  if(state.currentExam.mode==='training' && state.currentExam.showAnswer) return;
+  const idx=state.currentExam.currentIndex;
+  const q=state.currentExam.questions[idx];
+  
+  if(isMultipleAnswersQuestion(q)){
+    if(!state.currentExam.multipleAnswerSelections) state.currentExam.multipleAnswerSelections={};
+    if(!state.currentExam.multipleAnswerSelections[idx]) state.currentExam.multipleAnswerSelections[idx]=[];
+    const selected=state.currentExam.multipleAnswerSelections[idx];
+    const pos=selected.indexOf(optionIndex);
+    if(pos>-1) selected.splice(pos,1);
+    else selected.push(optionIndex);
+    saveExamState();
+    renderExam();
+  } else {
+    state.currentExam.answers[idx]=optionIndex;
+    if(state.currentExam.firstAnswers[idx]===null) state.currentExam.firstAnswers[idx]=optionIndex;
+    const correct=isAnswerCorrect(q,optionIndex);
+    if(state.currentExam.mode==='training'){
+      if(state.settings.feedbackEnabled) playEffectSound(correct?'right':'wrong');
+      if(correct){
+        state.currentExam.showAnswer=true;
+        if(state.settings.animations!==false) showFireworks(48,12);
+      } else {
+        if(!state.wrongQuestions.includes(q.id)){
+          state.wrongQuestions.push(q.id);
+          saveWrongQuestions();
+        }
+        showToast(themeWrongMessage(),'error');
+      }
+      saveExamState();
+      renderExam();
+    } else {
+      saveExamState();
+      renderExam();
+    }
+  }
+}
 function themeWrongMessage(){ switch(state.settings.theme){ case 'desert': return 'الجواب انحرف عن مسار القافلة.'; case 'space': return 'Trajectory mismatch. Try again.'; case 'pirates': return 'Wrong turn on the treasure map.'; case 'castle': return 'The dragon dodged that answer.'; case 'lab': return 'Experiment unstable. Re-check the sample.'; default: return 'إجابة خاطئة.'; } }
-function showAnswer(){ if(!state.currentExam) return; state.currentExam.showAnswer=true; const idx=state.currentExam.currentIndex; const q=state.currentExam.questions[idx]; const ans=state.currentExam.firstAnswers[idx]; if(ans!==null && !isAnswerCorrect(q,ans) && !state.wrongQuestions.includes(q.id)){ state.wrongQuestions.push(q.id); saveWrongQuestions(); } saveExamState(); renderExam(); }
-function nextQuestion(){ if(!state.currentExam) return; if(state.currentExam.currentIndex<state.currentExam.questions.length-1){ state.currentExam.currentIndex+=1; state.currentExam.showAnswer=false; saveExamState(); renderExam(); scrollQuestionIntoView(true); } }
+function showAnswer(){
+  if(!state.currentExam) return;
+  state.currentExam.showAnswer=true;
+  const idx=state.currentExam.currentIndex;
+  const q=state.currentExam.questions[idx];
+  saveExamState();
+  renderExam();
+}
+function nextQuestion(){
+  if(!state.currentExam) return;
+  const idx=state.currentExam.currentIndex;
+  const q=state.currentExam.questions[idx];
+  if(isMultipleAnswersQuestion(q)){
+    const selected=state.currentExam.multipleAnswerSelections && state.currentExam.multipleAnswerSelections[idx] ? state.currentExam.multipleAnswerSelections[idx] : [];
+    if(areAllAnswersCorrect(q, selected)){
+      state.currentExam.answers[idx]=selected[0];
+      playEffectSound('right');
+    } else {
+      playEffectSound('wrong');
+    }
+  }
+  if(state.currentExam.currentIndex<state.currentExam.questions.length-1){
+    state.currentExam.currentIndex+=1;
+    state.currentExam.showAnswer=false;
+    renderExam();
+    scrollQuestionIntoView(true);
+  } else {
+    saveProgress();
+    showResults();
+  }
+}
 function prevQuestion(){ if(!state.currentExam || state.currentExam.direction!=='twoway') return; if(state.currentExam.currentIndex>0){ state.currentExam.currentIndex-=1; if(state.currentExam.mode==='training') state.currentExam.showAnswer=state.currentExam.answers[state.currentExam.currentIndex]!==null; saveExamState(); renderExam(); scrollQuestionIntoView(true); } }
 function navigateToQuestion(index){ if(!state.currentExam) return; if(state.currentExam.direction==='oneway' && index!==state.currentExam.currentIndex) return; state.currentExam.currentIndex=index; if(state.currentExam.mode==='training') state.currentExam.showAnswer=state.currentExam.answers[index]!==null; saveExamState(); renderExam(); scrollQuestionIntoView(true); }
 function scrollQuestionIntoView(smooth){ const q=el('question-container'); if(!q) return; const top=q.getBoundingClientRect().top + window.scrollY - 12; window.scrollTo({top, behavior:smooth && state.settings.animations!==false ? 'smooth':'auto'}); }
@@ -1800,7 +2006,12 @@ window.addEventListener('DOMContentLoaded', async ()=>{
   'من سار على الدرب وصل، ولو طال الطريق.',
   'الساعي إلى العلم كالساعي إلى كنز لا ينفد.',
   'لا تؤجل جهد اليوم إلى غدٍ فتجتمع عليك الأيام.',
-  'كل صفحة تقرؤها اليوم تبني طبيبًا أفضل غدًا.'
+  'كل صفحة تقرؤها اليوم تبني طبيبًا أفضل غدًا.',
+  '{ وَقُل رَّبِّ زِدۡنِی عِلۡمࣰا }',
+  '{ فَٱصۡبِرۡ صَبۡرࣰا جَمِیلًا }',
+  '{ یَرۡفَعِ ٱللَّهُ ٱلَّذِینَ ءَامَنُوا۟ مِنكُمۡ وَٱلَّذِینَ أُوتُوا۟ ٱلۡعِلۡمَ دَرَجَـٰتࣲۚ وَٱللَّهُ بِمَا تَعۡمَلُونَ خَبِیرࣱ }',
+  '{ سَنُرِیهِمۡ ءَایَـٰتِنَا فِی ٱلۡـَٔافَاقِ وَفِیۤ أَنفُسِهِمۡ حَتَّىٰ یَتَبَیَّنَ لَهُمۡ أَنَّهُ ٱلۡحَقُّۗ }',
+  '{ قُلۡ هَلۡ یَسۡتَوِی ٱلَّذِینَ یَعۡلَمُونَ وَٱلَّذِینَ لَا یَعۡلَمُونَۗ إِنَّمَا یَتَذَكَّرُ أُو۟لُوا۟ ٱلۡأَلۡبَـٰبِ }'
 ];
   if(el('random-quote')) el('random-quote').textContent=quotes[Math.floor(Math.random()*quotes.length)];
   document.addEventListener('click',e=>{ if(!e.target.closest('.subject-card')) closeSubjectActions(); });
