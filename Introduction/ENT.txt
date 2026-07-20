@@ -48,12 +48,13 @@ Correct Answer: D) Urgent referral to ENT for fiberoptic laryngoscopy
 Explanation:
 Any smoker with hoarseness lasting more than 3 weeks is a red flag requiring urgent ENT referral for fiberoptic endoscopy to look for laryngeal tumors, as emphasized directly in the lecture. Antibiotics, PPIs, or reassurance risk delaying diagnosis of a potentially malignant cause.
 ###
+~Choose the correct answers~
 A young male teacher presents with hoarseness of voice for 3 weeks with a history of prolonged vocal strain. Laryngoscopy reveals a smooth, unilateral lesion on the vocal cord. What is the most likely diagnosis?
 A) Laryngeal carcinoma
 B) Vocal cord paralysis
 C) Vocal cord polyp
 D) Vocal cord nodules
 E) Reflux laryngitis
-Correct Answer: C) Vocal cord polyp
+Correct Answer: A) Laryngeal carcinoma / D) Vocal cord nodules / E) Reflux laryngitis
 Explanation:
 A vocal cord polyp typically presents as a unilateral, smooth lesion following a single episode of vocal strain or trauma, unlike nodules which are bilateral and related to chronic voice abuse (e.g., singers/teachers using their voice repetitively).
