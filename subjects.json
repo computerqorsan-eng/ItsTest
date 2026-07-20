@@ -1,0 +1,912 @@
+[
+  {
+    "id": "audio",
+    "name": "Audio",
+    "lectures": [],
+    "ai": [],
+    "years": [],
+    "allQuestions": [],
+    "totalQuestions": 0,
+    "totalLectures": 0,
+    "hasAiFolder": false
+  },
+  {
+    "id": "introduction",
+    "name": "Introduction",
+    "lectures": [
+      {
+        "id": "introduction__lecture__ent",
+        "name": "ENT",
+        "type": "lecture",
+        "subjectName": "Introduction",
+        "path": "Introduction/ENT.txt",
+        "questions": [
+          {
+            "id": "introduction__lecture__ent__1__p1ggod",
+            "number": "1",
+            "text": "A young male presents with unilateral epistaxis. What is the most likely diagnosis?",
+            "options": [
+              "Septal deviation",
+              "Allergic rhinitis",
+              "Juvenile nasal angiofibroma",
+              "Nasal polyp",
+              "Foreign body"
+            ],
+            "originalOptions": [
+              "Septal deviation",
+              "Allergic rhinitis",
+              "Juvenile nasal angiofibroma",
+              "Nasal polyp",
+              "Foreign body"
+            ],
+            "correctAnswer": "C) Juvenile nasal angiofibroma",
+            "correctAnswerText": "Juvenile nasal angiofibroma",
+            "correctIndex": 2,
+            "correctAnswerLetter": "C",
+            "explanation": "Unilateral epistaxis in a young male (adolescent) is a classic presentation of juvenile nasal angiofibroma (JNA), a vascular tumor requiring rule-out by nasal endoscopy. Septal deviation and foreign body typically cause obstruction rather than recurrent bleeding, and allergic rhinitis/nasal polyps are usually bilateral.",
+            "batchName": "",
+            "pageNumber": "",
+            "subjectName": "Introduction",
+            "subjectId": "introduction",
+            "lectureName": "ENT",
+            "groupName": "ENT",
+            "sourceType": "lecture"
+          },
+          {
+            "id": "introduction__lecture__ent__2__fitit1",
+            "number": "2",
+            "text": "A patient has bone conduction better than air conduction on the right ear (negative Rinne). On Weber's test, sound is heard better in the right ear. What is the diagnosis?",
+            "options": [
+              "Right conductive hearing loss",
+              "Left conductive hearing loss",
+              "Right sensorineural hearing loss",
+              "Bilateral sensorineural hearing loss",
+              "Left sensorineural hearing loss"
+            ],
+            "originalOptions": [
+              "Right conductive hearing loss",
+              "Left conductive hearing loss",
+              "Right sensorineural hearing loss",
+              "Bilateral sensorineural hearing loss",
+              "Left sensorineural hearing loss"
+            ],
+            "correctAnswer": "A) Right conductive hearing loss",
+            "correctAnswerText": "Right conductive hearing loss",
+            "correctIndex": 0,
+            "correctAnswerLetter": "A",
+            "explanation": "A negative Rinne test (bone conduction > air conduction) on the right ear indicates a conductive problem in that ear, and Weber lateralizing to the same (right) ear confirms this, since sound lateralizes toward the affected ear in conductive hearing loss. In sensorineural loss, Rinne would remain positive (air > bone) and Weber would lateralize to the opposite, better-hearing ear.",
+            "batchName": "",
+            "pageNumber": "",
+            "subjectName": "Introduction",
+            "subjectId": "introduction",
+            "lectureName": "ENT",
+            "groupName": "ENT",
+            "sourceType": "lecture"
+          },
+          {
+            "id": "introduction__lecture__ent__3__awc2cf",
+            "number": "3",
+            "text": "What tuning fork frequency is used for hearing tests?",
+            "options": [
+              "128 Hz",
+              "256 Hz",
+              "1024 Hz",
+              "512 Hz",
+              "2048 Hz"
+            ],
+            "originalOptions": [
+              "128 Hz",
+              "256 Hz",
+              "1024 Hz",
+              "512 Hz",
+              "2048 Hz"
+            ],
+            "correctAnswer": "D) 512 Hz",
+            "correctAnswerText": "512 Hz",
+            "correctIndex": 3,
+            "correctAnswerLetter": "D",
+            "explanation": "The standard tuning fork used for Weber's and Rinne's tests is 512 Hz, providing a balance between adequate duration of vibration and clinical accuracy. Lower frequencies (128–256 Hz) are felt more than heard, while higher frequencies decay too quickly for reliable bedside testing.",
+            "batchName": "",
+            "pageNumber": "",
+            "subjectName": "Introduction",
+            "subjectId": "introduction",
+            "lectureName": "ENT",
+            "groupName": "ENT",
+            "sourceType": "lecture"
+          },
+          {
+            "id": "introduction__lecture__ent__4__lzafsj",
+            "number": "4",
+            "text": "A child presents with a midline neck lump that moves when they stick out their tongue. What is the diagnosis?",
+            "options": [
+              "Dermoid cyst",
+              "Submental lymph node",
+              "Thyroid isthmus swelling",
+              "Branchial cyst",
+              "Thyroglossal cyst"
+            ],
+            "originalOptions": [
+              "Dermoid cyst",
+              "Submental lymph node",
+              "Thyroid isthmus swelling",
+              "Branchial cyst",
+              "Thyroglossal cyst"
+            ],
+            "correctAnswer": "E) Thyroglossal cyst",
+            "correctAnswerText": "Thyroglossal cyst",
+            "correctIndex": 4,
+            "correctAnswerLetter": "E",
+            "explanation": "A thyroglossal cyst is a midline neck lump that characteristically moves upward on tongue protrusion due to its embryological connection to the foramen cecum. Thyroid isthmus swelling moves with swallowing but not tongue protrusion, dermoid cysts are non-tender and mobile without this movement, and branchial cysts are lateral, not midline.",
+            "batchName": "",
+            "pageNumber": "",
+            "subjectName": "Introduction",
+            "subjectId": "introduction",
+            "lectureName": "ENT",
+            "groupName": "ENT",
+            "sourceType": "lecture"
+          },
+          {
+            "id": "introduction__lecture__ent__5__b00fqh",
+            "number": "5",
+            "text": "A 55-year-old male smoker presents with hoarseness of voice persisting for 3 weeks. What is the most appropriate next step in management?",
+            "options": [
+              "Reassure and review in 3 months",
+              "Trial of proton pump inhibitor",
+              "Empirical antibiotics",
+              "Urgent referral to ENT for fiberoptic laryngoscopy",
+              "Voice rest and speech therapy"
+            ],
+            "originalOptions": [
+              "Reassure and review in 3 months",
+              "Trial of proton pump inhibitor",
+              "Empirical antibiotics",
+              "Urgent referral to ENT for fiberoptic laryngoscopy",
+              "Voice rest and speech therapy"
+            ],
+            "correctAnswer": "D) Urgent referral to ENT for fiberoptic laryngoscopy",
+            "correctAnswerText": "Urgent referral to ENT for fiberoptic laryngoscopy",
+            "correctIndex": 3,
+            "correctAnswerLetter": "D",
+            "explanation": "Any smoker with hoarseness lasting more than 3 weeks is a red flag requiring urgent ENT referral for fiberoptic endoscopy to look for laryngeal tumors, as emphasized directly in the lecture. Antibiotics, PPIs, or reassurance risk delaying diagnosis of a potentially malignant cause.",
+            "batchName": "",
+            "pageNumber": "",
+            "subjectName": "Introduction",
+            "subjectId": "introduction",
+            "lectureName": "ENT",
+            "groupName": "ENT",
+            "sourceType": "lecture"
+          },
+          {
+            "id": "introduction__lecture__ent__6__7muyhx",
+            "number": "6",
+            "text": "~Choose the correct answers~ A young male teacher presents with hoarseness of voice for 3 weeks with a history of prolonged vocal strain. Laryngoscopy reveals a smooth, unilateral lesion on the vocal cord. What is the most likely diagnosis?",
+            "options": [
+              "Laryngeal carcinoma",
+              "Vocal cord paralysis",
+              "Vocal cord polyp",
+              "Vocal cord nodules",
+              "Reflux laryngitis"
+            ],
+            "originalOptions": [
+              "Laryngeal carcinoma",
+              "Vocal cord paralysis",
+              "Vocal cord polyp",
+              "Vocal cord nodules",
+              "Reflux laryngitis"
+            ],
+            "correctAnswer": "A) Laryngeal carcinoma / D) Vocal cord nodules / E) Reflux laryngitis",
+            "correctAnswerText": "Laryngeal carcinoma",
+            "correctIndex": 0,
+            "correctAnswerLetter": "A",
+            "explanation": "A vocal cord polyp typically presents as a unilateral, smooth lesion following a single episode of vocal strain or trauma, unlike nodules which are bilateral and related to chronic voice abuse (e.g., singers/teachers using their voice repetitively).",
+            "batchName": "",
+            "pageNumber": "",
+            "subjectName": "Introduction",
+            "subjectId": "introduction",
+            "lectureName": "ENT",
+            "groupName": "ENT",
+            "sourceType": "lecture"
+          }
+        ]
+      },
+      {
+        "id": "introduction__lecture__ophthalmology",
+        "name": "Ophthalmology",
+        "type": "lecture",
+        "subjectName": "Introduction",
+        "path": "Introduction/Ophthalmology.txt",
+        "questions": [
+          {
+            "id": "introduction__lecture__ophthalmology__1__byd3hv",
+            "number": "1",
+            "text": "If a patient has a visual acuity of 6/12, what does this mean?",
+            "options": [
+              "They can see at 6 meters what a person with normal vision can see at 12 meters",
+              "They can see at 12 meters what a person with normal vision can see at 6 meters",
+              "Their vision is better than normal, resolving details invisible to the average eye at 6 meters",
+              "They have normal visual acuity equivalent to 6/6",
+              "They can only perceive hand movements at a distance of 6 meters"
+            ],
+            "originalOptions": [
+              "They can see at 6 meters what a person with normal vision can see at 12 meters",
+              "They can see at 12 meters what a person with normal vision can see at 6 meters",
+              "Their vision is better than normal, resolving details invisible to the average eye at 6 meters",
+              "They have normal visual acuity equivalent to 6/6",
+              "They can only perceive hand movements at a distance of 6 meters"
+            ],
+            "correctAnswer": "A) They can see at 6 meters what a person with normal vision can see at 12 meters",
+            "correctAnswerText": "They can see at 6 meters what a person with normal vision can see at 12 meters",
+            "correctIndex": 0,
+            "correctAnswerLetter": "A",
+            "explanation": "6/12 = test distance/normal distance, meaning reduced acuity, not enhanced. B reverses the fraction (would mean better-than-normal vision), C and D wrongly describe normal or supranormal vision, and E describes near-blindness, far worse than 6/12.",
+            "batchName": "",
+            "pageNumber": "",
+            "subjectName": "Introduction",
+            "subjectId": "introduction",
+            "lectureName": "Ophthalmology",
+            "groupName": "Ophthalmology",
+            "sourceType": "lecture"
+          },
+          {
+            "id": "introduction__lecture__ophthalmology__2__x5zi8f",
+            "number": "2",
+            "text": "This test is used to asses (The image shows: A circle of green dots containing the number 12 made of orange dots) ?",
+            "options": [
+              "Visual acuity",
+              "Pupillary reflex",
+              "Visual field",
+              "Color vision",
+              "Contrast sensitivity"
+            ],
+            "originalOptions": [
+              "Visual acuity",
+              "Pupillary reflex",
+              "Visual field",
+              "Color vision",
+              "Contrast sensitivity"
+            ],
+            "correctAnswer": "D) Color vision",
+            "correctAnswerText": "Color vision",
+            "correctIndex": 3,
+            "correctAnswerLetter": "D",
+            "explanation": "This is an Ishihara pseudoisochromatic plate, used specifically for color vision testing. A uses the Snellen chart, B uses a light source, C uses confrontation/perimetry, and E uses contrast charts — none use colored dot plates.",
+            "batchName": "",
+            "pageNumber": "",
+            "subjectName": "Introduction",
+            "subjectId": "introduction",
+            "lectureName": "Ophthalmology",
+            "groupName": "Ophthalmology",
+            "sourceType": "lecture"
+          },
+          {
+            "id": "introduction__lecture__ophthalmology__3__bxjvpd",
+            "number": "3",
+            "text": "What condition causes acute painful loss of vision?",
+            "options": [
+              "Central retinal artery occlusion",
+              "Acute angle-closure glaucoma",
+              "Cataract",
+              "Age-related macular degeneration",
+              "Retinal detachment"
+            ],
+            "originalOptions": [
+              "Central retinal artery occlusion",
+              "Acute angle-closure glaucoma",
+              "Cataract",
+              "Age-related macular degeneration",
+              "Retinal detachment"
+            ],
+            "correctAnswer": "B) Acute angle-closure glaucoma",
+            "correctAnswerText": "Acute angle-closure glaucoma",
+            "correctIndex": 1,
+            "correctAnswerLetter": "B",
+            "explanation": "Only angle-closure glaucoma is both acute and painful. A and E are acute but painless, while C and D are painless and gradual, not acute.",
+            "batchName": "",
+            "pageNumber": "",
+            "subjectName": "Introduction",
+            "subjectId": "introduction",
+            "lectureName": "Ophthalmology",
+            "groupName": "Ophthalmology",
+            "sourceType": "lecture"
+          },
+          {
+            "id": "introduction__lecture__ophthalmology__4__v0jw9f",
+            "number": "4",
+            "text": "All are causes of this sign except (The image shows: A red eye) ?",
+            "options": [
+              "Allergic conjunctivitis",
+              "Subconjunctival hemorrhage",
+              "Bacterial keratitis",
+              "Anterior uveitis",
+              "Macular edema"
+            ],
+            "originalOptions": [
+              "Allergic conjunctivitis",
+              "Subconjunctival hemorrhage",
+              "Bacterial keratitis",
+              "Anterior uveitis",
+              "Macular edema"
+            ],
+            "correctAnswer": "E) Macular edema",
+            "correctAnswerText": "Macular edema",
+            "correctIndex": 4,
+            "correctAnswerLetter": "E",
+            "explanation": "Macular edema is a retinal/central vision problem, not a cause of ocular redness. A–D all directly cause a red eye through conjunctival, corneal, or intraocular inflammation/hemorrhage.",
+            "batchName": "",
+            "pageNumber": "",
+            "subjectName": "Introduction",
+            "subjectId": "introduction",
+            "lectureName": "Ophthalmology",
+            "groupName": "Ophthalmology",
+            "sourceType": "lecture"
+          },
+          {
+            "id": "introduction__lecture__ophthalmology__5__xqin3w",
+            "number": "5",
+            "text": "What is the term for pupils of different sizes?",
+            "options": [
+              "Nystagmus",
+              "Anisocoria",
+              "Ptosis",
+              "Diplopia",
+              "RAPD"
+            ],
+            "originalOptions": [
+              "Nystagmus",
+              "Anisocoria",
+              "Ptosis",
+              "Diplopia",
+              "RAPD"
+            ],
+            "correctAnswer": "B) Anisocoria",
+            "correctAnswerText": "Anisocoria",
+            "correctIndex": 1,
+            "correctAnswerLetter": "B",
+            "explanation": "Anisocoria specifically means unequal pupil size. Nystagmus is involuntary eye movement, ptosis is lid drooping, diplopia is double vision, and RAPD is an abnormal light reflex — none describe pupil size difference.",
+            "batchName": "",
+            "pageNumber": "",
+            "subjectName": "Introduction",
+            "subjectId": "introduction",
+            "lectureName": "Ophthalmology",
+            "groupName": "Ophthalmology",
+            "sourceType": "lecture"
+          },
+          {
+            "id": "introduction__lecture__ophthalmology__6__mtury6",
+            "number": "6",
+            "text": "What is the visual field exam called?",
+            "options": [
+              "Ishihara test",
+              "Swinging light test",
+              "Confrontation test",
+              "Snellen test",
+              "Ophthalmoscopy"
+            ],
+            "originalOptions": [
+              "Ishihara test",
+              "Swinging light test",
+              "Confrontation test",
+              "Snellen test",
+              "Ophthalmoscopy"
+            ],
+            "correctAnswer": "C) Confrontation test",
+            "correctAnswerText": "Confrontation test",
+            "correctIndex": 2,
+            "correctAnswerLetter": "C",
+            "explanation": "The confrontation test is the bedside visual field exam. A tests color, B tests for RAPD, D tests acuity, and E examines the fundus — all test different functions.",
+            "batchName": "",
+            "pageNumber": "",
+            "subjectName": "Introduction",
+            "subjectId": "introduction",
+            "lectureName": "Ophthalmology",
+            "groupName": "Ophthalmology",
+            "sourceType": "lecture"
+          },
+          {
+            "id": "introduction__lecture__ophthalmology__7__vg0w00",
+            "number": "7",
+            "text": "What are the three components involved in accommodation?",
+            "options": [
+              "Accommodation, pupillary constriction, and convergence",
+              "Accommodation, pupillary constriction, and divergence",
+              "Accommodation, pupillary dilation, and divergence",
+              "Accommodation, pupillary dilation, and convergence",
+              "Convergence, dilation, and visual acuity"
+            ],
+            "originalOptions": [
+              "Accommodation, pupillary constriction, and convergence",
+              "Accommodation, pupillary constriction, and divergence",
+              "Accommodation, pupillary dilation, and divergence",
+              "Accommodation, pupillary dilation, and convergence",
+              "Convergence, dilation, and visual acuity"
+            ],
+            "correctAnswer": "A) Accommodation, pupillary constriction, and convergence",
+            "correctAnswerText": "Accommodation, pupillary constriction, and convergence",
+            "correctIndex": 0,
+            "correctAnswerLetter": "A",
+            "explanation": "The near reflex triad is lens accommodation + pupillary constriction + convergence. B and C swap in divergence (the opposite of convergence), D swaps in dilation (opposite of constriction), and E replaces accommodation with visual acuity, which isn't part of the triad.",
+            "batchName": "",
+            "pageNumber": "",
+            "subjectName": "Introduction",
+            "subjectId": "introduction",
+            "lectureName": "Ophthalmology",
+            "groupName": "Ophthalmology",
+            "sourceType": "lecture"
+          },
+          {
+            "id": "introduction__lecture__ophthalmology__8__w975qi",
+            "number": "8",
+            "text": "The limbus houses germinative stem cells that maintain the corneal epithelium. What is the primary function of this layer?",
+            "options": [
+              "Anchoring the epithelium via desmosomes only",
+              "Maintaining endothelial cell density",
+              "Providing mechanical strength via collagen fibrils",
+              "Regulating aqueous humor outflow",
+              "Regeneration and proliferation of epithelial cells"
+            ],
+            "originalOptions": [
+              "Anchoring the epithelium via desmosomes only",
+              "Maintaining endothelial cell density",
+              "Providing mechanical strength via collagen fibrils",
+              "Regulating aqueous humor outflow",
+              "Regeneration and proliferation of epithelial cells"
+            ],
+            "correctAnswer": "E) Regeneration and proliferation of epithelial cells",
+            "correctAnswerText": "Regeneration and proliferation of epithelial cells",
+            "correctIndex": 4,
+            "correctAnswerLetter": "E",
+            "explanation": "Limbal stem cells continuously regenerate the corneal epithelium, allowing rapid repair after abrasion by cell spreading and proliferation. A is incomplete, as anchoring also involves hemidesmosomes and fibrils, not desmosomes alone. B is wrong — the endothelium instead repairs by cell spreading alone with loss of density, no regeneration. C and D describe Bowman's layer and the trabecular meshwork, unrelated structures.",
+            "batchName": "",
+            "pageNumber": "",
+            "subjectName": "Introduction",
+            "subjectId": "introduction",
+            "lectureName": "Ophthalmology",
+            "groupName": "Ophthalmology",
+            "sourceType": "lecture"
+          }
+        ]
+      }
+    ],
+    "ai": [],
+    "years": [],
+    "allQuestions": [
+      {
+        "id": "introduction__lecture__ent__1__p1ggod",
+        "number": "1",
+        "text": "A young male presents with unilateral epistaxis. What is the most likely diagnosis?",
+        "options": [
+          "Septal deviation",
+          "Allergic rhinitis",
+          "Juvenile nasal angiofibroma",
+          "Nasal polyp",
+          "Foreign body"
+        ],
+        "originalOptions": [
+          "Septal deviation",
+          "Allergic rhinitis",
+          "Juvenile nasal angiofibroma",
+          "Nasal polyp",
+          "Foreign body"
+        ],
+        "correctAnswer": "C) Juvenile nasal angiofibroma",
+        "correctAnswerText": "Juvenile nasal angiofibroma",
+        "correctIndex": 2,
+        "correctAnswerLetter": "C",
+        "explanation": "Unilateral epistaxis in a young male (adolescent) is a classic presentation of juvenile nasal angiofibroma (JNA), a vascular tumor requiring rule-out by nasal endoscopy. Septal deviation and foreign body typically cause obstruction rather than recurrent bleeding, and allergic rhinitis/nasal polyps are usually bilateral.",
+        "batchName": "",
+        "pageNumber": "",
+        "subjectName": "Introduction",
+        "subjectId": "introduction",
+        "lectureName": "ENT",
+        "groupName": "ENT",
+        "sourceType": "lecture"
+      },
+      {
+        "id": "introduction__lecture__ent__2__fitit1",
+        "number": "2",
+        "text": "A patient has bone conduction better than air conduction on the right ear (negative Rinne). On Weber's test, sound is heard better in the right ear. What is the diagnosis?",
+        "options": [
+          "Right conductive hearing loss",
+          "Left conductive hearing loss",
+          "Right sensorineural hearing loss",
+          "Bilateral sensorineural hearing loss",
+          "Left sensorineural hearing loss"
+        ],
+        "originalOptions": [
+          "Right conductive hearing loss",
+          "Left conductive hearing loss",
+          "Right sensorineural hearing loss",
+          "Bilateral sensorineural hearing loss",
+          "Left sensorineural hearing loss"
+        ],
+        "correctAnswer": "A) Right conductive hearing loss",
+        "correctAnswerText": "Right conductive hearing loss",
+        "correctIndex": 0,
+        "correctAnswerLetter": "A",
+        "explanation": "A negative Rinne test (bone conduction > air conduction) on the right ear indicates a conductive problem in that ear, and Weber lateralizing to the same (right) ear confirms this, since sound lateralizes toward the affected ear in conductive hearing loss. In sensorineural loss, Rinne would remain positive (air > bone) and Weber would lateralize to the opposite, better-hearing ear.",
+        "batchName": "",
+        "pageNumber": "",
+        "subjectName": "Introduction",
+        "subjectId": "introduction",
+        "lectureName": "ENT",
+        "groupName": "ENT",
+        "sourceType": "lecture"
+      },
+      {
+        "id": "introduction__lecture__ent__3__awc2cf",
+        "number": "3",
+        "text": "What tuning fork frequency is used for hearing tests?",
+        "options": [
+          "128 Hz",
+          "256 Hz",
+          "1024 Hz",
+          "512 Hz",
+          "2048 Hz"
+        ],
+        "originalOptions": [
+          "128 Hz",
+          "256 Hz",
+          "1024 Hz",
+          "512 Hz",
+          "2048 Hz"
+        ],
+        "correctAnswer": "D) 512 Hz",
+        "correctAnswerText": "512 Hz",
+        "correctIndex": 3,
+        "correctAnswerLetter": "D",
+        "explanation": "The standard tuning fork used for Weber's and Rinne's tests is 512 Hz, providing a balance between adequate duration of vibration and clinical accuracy. Lower frequencies (128–256 Hz) are felt more than heard, while higher frequencies decay too quickly for reliable bedside testing.",
+        "batchName": "",
+        "pageNumber": "",
+        "subjectName": "Introduction",
+        "subjectId": "introduction",
+        "lectureName": "ENT",
+        "groupName": "ENT",
+        "sourceType": "lecture"
+      },
+      {
+        "id": "introduction__lecture__ent__4__lzafsj",
+        "number": "4",
+        "text": "A child presents with a midline neck lump that moves when they stick out their tongue. What is the diagnosis?",
+        "options": [
+          "Dermoid cyst",
+          "Submental lymph node",
+          "Thyroid isthmus swelling",
+          "Branchial cyst",
+          "Thyroglossal cyst"
+        ],
+        "originalOptions": [
+          "Dermoid cyst",
+          "Submental lymph node",
+          "Thyroid isthmus swelling",
+          "Branchial cyst",
+          "Thyroglossal cyst"
+        ],
+        "correctAnswer": "E) Thyroglossal cyst",
+        "correctAnswerText": "Thyroglossal cyst",
+        "correctIndex": 4,
+        "correctAnswerLetter": "E",
+        "explanation": "A thyroglossal cyst is a midline neck lump that characteristically moves upward on tongue protrusion due to its embryological connection to the foramen cecum. Thyroid isthmus swelling moves with swallowing but not tongue protrusion, dermoid cysts are non-tender and mobile without this movement, and branchial cysts are lateral, not midline.",
+        "batchName": "",
+        "pageNumber": "",
+        "subjectName": "Introduction",
+        "subjectId": "introduction",
+        "lectureName": "ENT",
+        "groupName": "ENT",
+        "sourceType": "lecture"
+      },
+      {
+        "id": "introduction__lecture__ent__5__b00fqh",
+        "number": "5",
+        "text": "A 55-year-old male smoker presents with hoarseness of voice persisting for 3 weeks. What is the most appropriate next step in management?",
+        "options": [
+          "Reassure and review in 3 months",
+          "Trial of proton pump inhibitor",
+          "Empirical antibiotics",
+          "Urgent referral to ENT for fiberoptic laryngoscopy",
+          "Voice rest and speech therapy"
+        ],
+        "originalOptions": [
+          "Reassure and review in 3 months",
+          "Trial of proton pump inhibitor",
+          "Empirical antibiotics",
+          "Urgent referral to ENT for fiberoptic laryngoscopy",
+          "Voice rest and speech therapy"
+        ],
+        "correctAnswer": "D) Urgent referral to ENT for fiberoptic laryngoscopy",
+        "correctAnswerText": "Urgent referral to ENT for fiberoptic laryngoscopy",
+        "correctIndex": 3,
+        "correctAnswerLetter": "D",
+        "explanation": "Any smoker with hoarseness lasting more than 3 weeks is a red flag requiring urgent ENT referral for fiberoptic endoscopy to look for laryngeal tumors, as emphasized directly in the lecture. Antibiotics, PPIs, or reassurance risk delaying diagnosis of a potentially malignant cause.",
+        "batchName": "",
+        "pageNumber": "",
+        "subjectName": "Introduction",
+        "subjectId": "introduction",
+        "lectureName": "ENT",
+        "groupName": "ENT",
+        "sourceType": "lecture"
+      },
+      {
+        "id": "introduction__lecture__ent__6__7muyhx",
+        "number": "6",
+        "text": "~Choose the correct answers~ A young male teacher presents with hoarseness of voice for 3 weeks with a history of prolonged vocal strain. Laryngoscopy reveals a smooth, unilateral lesion on the vocal cord. What is the most likely diagnosis?",
+        "options": [
+          "Laryngeal carcinoma",
+          "Vocal cord paralysis",
+          "Vocal cord polyp",
+          "Vocal cord nodules",
+          "Reflux laryngitis"
+        ],
+        "originalOptions": [
+          "Laryngeal carcinoma",
+          "Vocal cord paralysis",
+          "Vocal cord polyp",
+          "Vocal cord nodules",
+          "Reflux laryngitis"
+        ],
+        "correctAnswer": "A) Laryngeal carcinoma / D) Vocal cord nodules / E) Reflux laryngitis",
+        "correctAnswerText": "Laryngeal carcinoma",
+        "correctIndex": 0,
+        "correctAnswerLetter": "A",
+        "explanation": "A vocal cord polyp typically presents as a unilateral, smooth lesion following a single episode of vocal strain or trauma, unlike nodules which are bilateral and related to chronic voice abuse (e.g., singers/teachers using their voice repetitively).",
+        "batchName": "",
+        "pageNumber": "",
+        "subjectName": "Introduction",
+        "subjectId": "introduction",
+        "lectureName": "ENT",
+        "groupName": "ENT",
+        "sourceType": "lecture"
+      },
+      {
+        "id": "introduction__lecture__ophthalmology__1__byd3hv",
+        "number": "1",
+        "text": "If a patient has a visual acuity of 6/12, what does this mean?",
+        "options": [
+          "They can see at 6 meters what a person with normal vision can see at 12 meters",
+          "They can see at 12 meters what a person with normal vision can see at 6 meters",
+          "Their vision is better than normal, resolving details invisible to the average eye at 6 meters",
+          "They have normal visual acuity equivalent to 6/6",
+          "They can only perceive hand movements at a distance of 6 meters"
+        ],
+        "originalOptions": [
+          "They can see at 6 meters what a person with normal vision can see at 12 meters",
+          "They can see at 12 meters what a person with normal vision can see at 6 meters",
+          "Their vision is better than normal, resolving details invisible to the average eye at 6 meters",
+          "They have normal visual acuity equivalent to 6/6",
+          "They can only perceive hand movements at a distance of 6 meters"
+        ],
+        "correctAnswer": "A) They can see at 6 meters what a person with normal vision can see at 12 meters",
+        "correctAnswerText": "They can see at 6 meters what a person with normal vision can see at 12 meters",
+        "correctIndex": 0,
+        "correctAnswerLetter": "A",
+        "explanation": "6/12 = test distance/normal distance, meaning reduced acuity, not enhanced. B reverses the fraction (would mean better-than-normal vision), C and D wrongly describe normal or supranormal vision, and E describes near-blindness, far worse than 6/12.",
+        "batchName": "",
+        "pageNumber": "",
+        "subjectName": "Introduction",
+        "subjectId": "introduction",
+        "lectureName": "Ophthalmology",
+        "groupName": "Ophthalmology",
+        "sourceType": "lecture"
+      },
+      {
+        "id": "introduction__lecture__ophthalmology__2__x5zi8f",
+        "number": "2",
+        "text": "This test is used to asses (The image shows: A circle of green dots containing the number 12 made of orange dots) ?",
+        "options": [
+          "Visual acuity",
+          "Pupillary reflex",
+          "Visual field",
+          "Color vision",
+          "Contrast sensitivity"
+        ],
+        "originalOptions": [
+          "Visual acuity",
+          "Pupillary reflex",
+          "Visual field",
+          "Color vision",
+          "Contrast sensitivity"
+        ],
+        "correctAnswer": "D) Color vision",
+        "correctAnswerText": "Color vision",
+        "correctIndex": 3,
+        "correctAnswerLetter": "D",
+        "explanation": "This is an Ishihara pseudoisochromatic plate, used specifically for color vision testing. A uses the Snellen chart, B uses a light source, C uses confrontation/perimetry, and E uses contrast charts — none use colored dot plates.",
+        "batchName": "",
+        "pageNumber": "",
+        "subjectName": "Introduction",
+        "subjectId": "introduction",
+        "lectureName": "Ophthalmology",
+        "groupName": "Ophthalmology",
+        "sourceType": "lecture"
+      },
+      {
+        "id": "introduction__lecture__ophthalmology__3__bxjvpd",
+        "number": "3",
+        "text": "What condition causes acute painful loss of vision?",
+        "options": [
+          "Central retinal artery occlusion",
+          "Acute angle-closure glaucoma",
+          "Cataract",
+          "Age-related macular degeneration",
+          "Retinal detachment"
+        ],
+        "originalOptions": [
+          "Central retinal artery occlusion",
+          "Acute angle-closure glaucoma",
+          "Cataract",
+          "Age-related macular degeneration",
+          "Retinal detachment"
+        ],
+        "correctAnswer": "B) Acute angle-closure glaucoma",
+        "correctAnswerText": "Acute angle-closure glaucoma",
+        "correctIndex": 1,
+        "correctAnswerLetter": "B",
+        "explanation": "Only angle-closure glaucoma is both acute and painful. A and E are acute but painless, while C and D are painless and gradual, not acute.",
+        "batchName": "",
+        "pageNumber": "",
+        "subjectName": "Introduction",
+        "subjectId": "introduction",
+        "lectureName": "Ophthalmology",
+        "groupName": "Ophthalmology",
+        "sourceType": "lecture"
+      },
+      {
+        "id": "introduction__lecture__ophthalmology__4__v0jw9f",
+        "number": "4",
+        "text": "All are causes of this sign except (The image shows: A red eye) ?",
+        "options": [
+          "Allergic conjunctivitis",
+          "Subconjunctival hemorrhage",
+          "Bacterial keratitis",
+          "Anterior uveitis",
+          "Macular edema"
+        ],
+        "originalOptions": [
+          "Allergic conjunctivitis",
+          "Subconjunctival hemorrhage",
+          "Bacterial keratitis",
+          "Anterior uveitis",
+          "Macular edema"
+        ],
+        "correctAnswer": "E) Macular edema",
+        "correctAnswerText": "Macular edema",
+        "correctIndex": 4,
+        "correctAnswerLetter": "E",
+        "explanation": "Macular edema is a retinal/central vision problem, not a cause of ocular redness. A–D all directly cause a red eye through conjunctival, corneal, or intraocular inflammation/hemorrhage.",
+        "batchName": "",
+        "pageNumber": "",
+        "subjectName": "Introduction",
+        "subjectId": "introduction",
+        "lectureName": "Ophthalmology",
+        "groupName": "Ophthalmology",
+        "sourceType": "lecture"
+      },
+      {
+        "id": "introduction__lecture__ophthalmology__5__xqin3w",
+        "number": "5",
+        "text": "What is the term for pupils of different sizes?",
+        "options": [
+          "Nystagmus",
+          "Anisocoria",
+          "Ptosis",
+          "Diplopia",
+          "RAPD"
+        ],
+        "originalOptions": [
+          "Nystagmus",
+          "Anisocoria",
+          "Ptosis",
+          "Diplopia",
+          "RAPD"
+        ],
+        "correctAnswer": "B) Anisocoria",
+        "correctAnswerText": "Anisocoria",
+        "correctIndex": 1,
+        "correctAnswerLetter": "B",
+        "explanation": "Anisocoria specifically means unequal pupil size. Nystagmus is involuntary eye movement, ptosis is lid drooping, diplopia is double vision, and RAPD is an abnormal light reflex — none describe pupil size difference.",
+        "batchName": "",
+        "pageNumber": "",
+        "subjectName": "Introduction",
+        "subjectId": "introduction",
+        "lectureName": "Ophthalmology",
+        "groupName": "Ophthalmology",
+        "sourceType": "lecture"
+      },
+      {
+        "id": "introduction__lecture__ophthalmology__6__mtury6",
+        "number": "6",
+        "text": "What is the visual field exam called?",
+        "options": [
+          "Ishihara test",
+          "Swinging light test",
+          "Confrontation test",
+          "Snellen test",
+          "Ophthalmoscopy"
+        ],
+        "originalOptions": [
+          "Ishihara test",
+          "Swinging light test",
+          "Confrontation test",
+          "Snellen test",
+          "Ophthalmoscopy"
+        ],
+        "correctAnswer": "C) Confrontation test",
+        "correctAnswerText": "Confrontation test",
+        "correctIndex": 2,
+        "correctAnswerLetter": "C",
+        "explanation": "The confrontation test is the bedside visual field exam. A tests color, B tests for RAPD, D tests acuity, and E examines the fundus — all test different functions.",
+        "batchName": "",
+        "pageNumber": "",
+        "subjectName": "Introduction",
+        "subjectId": "introduction",
+        "lectureName": "Ophthalmology",
+        "groupName": "Ophthalmology",
+        "sourceType": "lecture"
+      },
+      {
+        "id": "introduction__lecture__ophthalmology__7__vg0w00",
+        "number": "7",
+        "text": "What are the three components involved in accommodation?",
+        "options": [
+          "Accommodation, pupillary constriction, and convergence",
+          "Accommodation, pupillary constriction, and divergence",
+          "Accommodation, pupillary dilation, and divergence",
+          "Accommodation, pupillary dilation, and convergence",
+          "Convergence, dilation, and visual acuity"
+        ],
+        "originalOptions": [
+          "Accommodation, pupillary constriction, and convergence",
+          "Accommodation, pupillary constriction, and divergence",
+          "Accommodation, pupillary dilation, and divergence",
+          "Accommodation, pupillary dilation, and convergence",
+          "Convergence, dilation, and visual acuity"
+        ],
+        "correctAnswer": "A) Accommodation, pupillary constriction, and convergence",
+        "correctAnswerText": "Accommodation, pupillary constriction, and convergence",
+        "correctIndex": 0,
+        "correctAnswerLetter": "A",
+        "explanation": "The near reflex triad is lens accommodation + pupillary constriction + convergence. B and C swap in divergence (the opposite of convergence), D swaps in dilation (opposite of constriction), and E replaces accommodation with visual acuity, which isn't part of the triad.",
+        "batchName": "",
+        "pageNumber": "",
+        "subjectName": "Introduction",
+        "subjectId": "introduction",
+        "lectureName": "Ophthalmology",
+        "groupName": "Ophthalmology",
+        "sourceType": "lecture"
+      },
+      {
+        "id": "introduction__lecture__ophthalmology__8__w975qi",
+        "number": "8",
+        "text": "The limbus houses germinative stem cells that maintain the corneal epithelium. What is the primary function of this layer?",
+        "options": [
+          "Anchoring the epithelium via desmosomes only",
+          "Maintaining endothelial cell density",
+          "Providing mechanical strength via collagen fibrils",
+          "Regulating aqueous humor outflow",
+          "Regeneration and proliferation of epithelial cells"
+        ],
+        "originalOptions": [
+          "Anchoring the epithelium via desmosomes only",
+          "Maintaining endothelial cell density",
+          "Providing mechanical strength via collagen fibrils",
+          "Regulating aqueous humor outflow",
+          "Regeneration and proliferation of epithelial cells"
+        ],
+        "correctAnswer": "E) Regeneration and proliferation of epithelial cells",
+        "correctAnswerText": "Regeneration and proliferation of epithelial cells",
+        "correctIndex": 4,
+        "correctAnswerLetter": "E",
+        "explanation": "Limbal stem cells continuously regenerate the corneal epithelium, allowing rapid repair after abrasion by cell spreading and proliferation. A is incomplete, as anchoring also involves hemidesmosomes and fibrils, not desmosomes alone. B is wrong — the endothelium instead repairs by cell spreading alone with loss of density, no regeneration. C and D describe Bowman's layer and the trabecular meshwork, unrelated structures.",
+        "batchName": "",
+        "pageNumber": "",
+        "subjectName": "Introduction",
+        "subjectId": "introduction",
+        "lectureName": "Ophthalmology",
+        "groupName": "Ophthalmology",
+        "sourceType": "lecture"
+      }
+    ],
+    "totalQuestions": 14,
+    "totalLectures": 2,
+    "hasAiFolder": false
+  }
+]
