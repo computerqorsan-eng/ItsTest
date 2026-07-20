@@ -955,6 +955,7 @@ function renderExam(){
     if(timerEl) timerEl.classList.remove('hidden');
   }
   renderGrid();
+  renderExamTitle();
   const correctIdx=getCorrectIndex(q);
   const showAnswerState=state.currentExam.mode==='training' && state.currentExam.showAnswer;
   const fav=state.favorites.includes(q.id);
@@ -1058,7 +1059,56 @@ function closeExamTitleHelpPopup(){
   document.removeEventListener('scroll', closeExamTitleHelpPopup);
   document.removeEventListener('wheel', closeExamTitleHelpPopup);
 }
-function renderExamNav(){ if(!state.currentExam) return; const nav=el('exam-nav'); const idx=state.currentExam.currentIndex, last=state.currentExam.questions.length-1; let prevBtn='<span></span>', nextBtn='<span></span>'; if(state.currentExam.direction==='twoway' && idx>0) prevBtn='<button class="btn-secondary" onclick="prevQuestion()">Previous ←</button>'; if(state.currentExam.mode==='training'){ if(state.currentExam.showAnswer) nextBtn=idx<last?'<button class="btn-primary" onclick="nextQuestion()">Next →</button>':'<button class="btn-primary" onclick="finishExam()">Finish</button>'; else if(state.currentExam.answers[idx]!==null) nextBtn='<button class="btn-small" onclick="showAnswer()">Show Answer</button>'; } else if(state.currentExam.answers[idx]!==null) nextBtn=idx<last?'<button class="btn-primary" onclick="nextQuestion()">Next →</button>':'<button class="btn-primary" onclick="finishExam()">Finish</button>'; nav.innerHTML=prevBtn + nextBtn; }
+function renderExamNav(){
+  if(!state.currentExam) return;
+  const nav = el('exam-nav');
+  const idx = state.currentExam.currentIndex;
+  const last = state.currentExam.questions.length - 1;
+  const q = state.currentExam.questions[idx];
+  
+  let prevBtn = '<span></span>';
+  if(state.currentExam.direction === 'twoway' && idx > 0){
+    prevBtn = '<button class="btn-secondary" onclick="prevQuestion()">Previous ←</button>';
+  }
+  
+  let nextBtn = '<span></span>';
+  let submitBtn = '';
+  let showAnswerBtn = '';
+  
+  if(isMultipleAnswersQuestion(q)){
+    // أسئلة Multiple Answers
+    const selected = state.currentExam.multipleAnswerSelections && state.currentExam.multipleAnswerSelections[idx] ? state.currentExam.multipleAnswerSelections[idx] : [];
+    
+    if(state.currentExam.mode === 'training'){
+      // في وضع Practice
+      if(selected.length > 0 && !state.currentExam.showAnswer){
+        submitBtn = '<button class="btn-primary" onclick="submitMultipleAnswerQuestion()" style="min-width: 120px;">✅ Submit</button>';
+      }
+      
+      if(state.currentExam.showAnswer){
+        nextBtn = idx < last ? '<button class="btn-primary" onclick="nextQuestion()">Next →</button>' : '<button class="btn-primary" onclick="finishExam()">Finish</button>';
+      }
+    } else {
+      // في وضع Exam
+      if(selected.length > 0){
+        nextBtn = idx < last ? '<button class="btn-primary" onclick="nextQuestion()">Next →</button>' : '<button class="btn-primary" onclick="finishExam()">Finish</button>';
+      }
+    }
+  } else {
+    // أسئلة Single Answer
+    if(state.currentExam.mode === 'training'){
+      if(state.currentExam.showAnswer){
+        nextBtn = idx < last ? '<button class="btn-primary" onclick="nextQuestion()">Next →</button>' : '<button class="btn-primary" onclick="finishExam()">Finish</button>';
+      } else if(state.currentExam.answers[idx] !== null){
+        showAnswerBtn = '<button class="btn-small" onclick="showAnswer()">Show Answer</button>';
+      }
+    } else if(state.currentExam.answers[idx] !== null){
+      nextBtn = idx < last ? '<button class="btn-primary" onclick="nextQuestion()">Next →</button>' : '<button class="btn-primary" onclick="finishExam()">Finish</button>';
+    }
+  }
+  
+  nav.innerHTML = prevBtn + showAnswerBtn + submitBtn + nextBtn;
+}
 function selectOption(optionIndex){
   if(!state.currentExam || state.currentExam.submitted) return;
   if(state.currentExam.mode==='training' && state.currentExam.showAnswer) return;
@@ -1129,6 +1179,33 @@ function nextQuestion(){
     saveProgress();
     showResults();
   }
+}
+function submitMultipleAnswerQuestion(){
+  if(!state.currentExam) return;
+  const idx = state.currentExam.currentIndex;
+  const q = state.currentExam.questions[idx];
+  if(!isMultipleAnswersQuestion(q)) return;
+  
+  const selected = state.currentExam.multipleAnswerSelections && state.currentExam.multipleAnswerSelections[idx] ? state.currentExam.multipleAnswerSelections[idx] : [];
+  
+  if(areAllAnswersCorrect(q, selected)){
+    // الإجابة صحيحة
+    state.currentExam.answers[idx] = selected[0];
+    playEffectSound('right');
+    showToast('✅ صحيح!', 'success');
+    if(state.settings.animations !== false) showFireworks(48, 12);
+  } else {
+    // الإجابة خاطئة
+    playEffectSound('wrong');
+    showToast('❌ خاطئ! حاول مجددًا', 'error');
+    if(!state.wrongQuestions.includes(q.id)){
+      state.wrongQuestions.push(q.id);
+      saveWrongQuestions();
+    }
+  }
+  
+  saveExamState();
+  renderExam();
 }
 function prevQuestion(){ if(!state.currentExam || state.currentExam.direction!=='twoway') return; if(state.currentExam.currentIndex>0){ state.currentExam.currentIndex-=1; if(state.currentExam.mode==='training') state.currentExam.showAnswer=state.currentExam.answers[state.currentExam.currentIndex]!==null; saveExamState(); renderExam(); scrollQuestionIntoView(true); } }
 function navigateToQuestion(index){ if(!state.currentExam) return; if(state.currentExam.direction==='oneway' && index!==state.currentExam.currentIndex) return; state.currentExam.currentIndex=index; if(state.currentExam.mode==='training') state.currentExam.showAnswer=state.currentExam.answers[index]!==null; saveExamState(); renderExam(); scrollQuestionIntoView(true); }
