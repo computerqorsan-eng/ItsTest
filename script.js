@@ -69,6 +69,7 @@ function resolveCorrectIndex(options, correctAnswer, preferLetterOnly = false){
   return -1;
 }
 function getCorrectIndex(q){
+  if(q.isMultiple) return -1; // غير مستخدم
   if(typeof q.correctIndex==='number' && q.correctIndex>=0) return q.correctIndex;
   // إذا كان لدينا حرف الإجابة الصحيحة، نستخدمه
   if(q.correctAnswerLetter){
@@ -80,6 +81,110 @@ function getCorrectIndex(q){
   }
   q.correctIndex=resolveCorrectIndex(q.options||[], q.correctAnswerText || q.correctAnswer || '');
   return q.correctIndex;
+}
+// دوال مساعدة للإجابات المتعددة
+function getSelectedForQuestion(idx){
+  const exam = state.currentExam;
+  if(!exam) return null;
+  const q = exam.questions[idx];
+  const answer = exam.answers[idx];
+  if(q.isMultiple){
+    return (answer && Array.isArray(answer.selected)) ? answer.selected.slice() : [];
+  } else {
+    return (answer !== null && typeof answer === 'number') ? answer : null;
+  }
+}
+
+function isAnswerCorrect(q, idx){
+  if(q.isMultiple){
+    if(!Array.isArray(idx)) return false;
+    const sortedSelected = idx.slice().sort();
+    const sortedCorrect = q.correctIndices.slice().sort();
+    if(sortedSelected.length !== sortedCorrect.length) return false;
+    return sortedSelected.every((val, i) => val === sortedCorrect[i]);
+  } else {
+    return getCorrectIndex(q) === idx;
+  }
+}
+
+// تقييم الإجابة المتعددة في وضع التدريب
+function evaluateMultipleChoice(idx){
+  const exam = state.currentExam;
+  if(!exam) return;
+  const q = exam.questions[idx];
+  if(!q.isMultiple) return;
+  const selected = getSelectedForQuestion(idx);
+  if(!Array.isArray(selected) || selected.length === 0) return; // لا شيء محدد
+  const correct = isAnswerCorrect(q, selected);
+  const answerObj = exam.answers[idx];
+  if(answerObj){
+    answerObj.submitted = true;
+    answerObj.correct = correct;
+    if(!exam.firstAnswers[idx]){
+      exam.firstAnswers[idx] = { selected: selected.slice(), submitted: true, correct: correct };
+    }
+  }
+  if(correct){
+    exam.showAnswer = true;
+    if(exam.settings && exam.settings.feedbackEnabled !== false) playEffectSound('right');
+    if(state.settings.animations!==false) showFireworks(48,12);
+  } else {
+    if(!state.wrongQuestions.includes(q.id)){
+      state.wrongQuestions.push(q.id);
+      saveWrongQuestions();
+    }
+    showToast(themeWrongMessage(),'error');
+  }
+  saveExamState();
+  renderExam();
+}
+
+// تبديل خيار في الإجابة المتعددة
+function toggleMultipleOption(idx, optionIndex, checked){
+  const exam = state.currentExam;
+  if(!exam || exam.submitted) return;
+  if(exam.mode === 'training' && exam.showAnswer) return;
+  const q = exam.questions[idx];
+  if(!q.isMultiple) return;
+  let answerObj = exam.answers[idx];
+  if(!answerObj || typeof answerObj !== 'object'){
+    answerObj = { selected: [], submitted: false, correct: null };
+    exam.answers[idx] = answerObj;
+  }
+  // إذا كان قد تم الإرسال بالفعل، لا نسمح بتعديل الإجابة إلا إذا كانت خاطئة
+  if(answerObj.submitted && answerObj.correct) return;
+  // إذا كانت خاطئة ومُرسلة، نسمح بالتعديل وإعادة الإرسال
+  if(answerObj.submitted && !answerObj.correct){
+    // نسمح بالتعديل
+  }
+  const selected = answerObj.selected;
+  if(checked){
+    if(!selected.includes(optionIndex)) selected.push(optionIndex);
+  } else {
+    const pos = selected.indexOf(optionIndex);
+    if(pos !== -1) selected.splice(pos, 1);
+  }
+  // إذا تم الإرسال سابقاً وكانت خاطئة، نعيد تعيين حالة الإرسال
+  if(answerObj.submitted && !answerObj.correct){
+    answerObj.submitted = false;
+    answerObj.correct = null;
+  }
+  saveExamState();
+  renderExam();
+}
+// إرسال الإجابة المتعددة في وضع التدريب
+function submitMultipleChoice(idx){
+  const exam = state.currentExam;
+  if(!exam || exam.submitted) return;
+  if(exam.mode !== 'training') return;
+  const q = exam.questions[idx];
+  if(!q.isMultiple) return;
+  const selected = getSelectedForQuestion(idx);
+  if(!Array.isArray(selected) || selected.length === 0){
+    showToast('يرجى اختيار إجابة واحدة على الأقل.', 'error');
+    return;
+  }
+  evaluateMultipleChoice(idx);
 }
 function isAnswerCorrect(q, idx){ return getCorrectIndex(q)===idx; }
 function getCorrectAnswerText(q){
@@ -830,24 +935,53 @@ function prepareQuestionForExam(question){
   const baseOptions = (clone.options || []).map(opt => stripOptionPrefix(opt));
   clone.originalOptions = baseOptions.slice();
   clone.options = baseOptions.slice();
-  // استخدام الحرف المخزن إن وجد
+
+  // الاحتفاظ بحقول الإجابات المتعددة إن وجدت
+  if(clone.isMultiple && Array.isArray(clone.correctIndices) && clone.correctIndices.length > 0){
+    clone.correctIndices = clone.correctIndices.slice();
+    clone.correctAnswerLetters = clone.correctAnswerLetters.slice();
+    clone.correctAnswerTexts = clone.correctAnswerTexts.slice();
+    clone.correctAnswerText = clone.correctAnswerTexts.join(' / ');
+    clone.correctIndex = -1; // غير مستخدم
+    clone.correctAnswerLetter = '';
+    return clone;
+  }
+
+  // إذا كان أحادي الإجابة
   if(clone.correctAnswerLetter){
     const letterIndex = clone.correctAnswerLetter.charCodeAt(0) - 65;
     if(letterIndex >= 0 && letterIndex < clone.options.length){
       clone.correctIndex = letterIndex;
       clone.correctAnswerText = clone.options[letterIndex];
       clone.correctAnswer = clone.correctAnswerText;
+      clone.isMultiple = false;
+      clone.correctIndices = [letterIndex];
+      clone.correctAnswerLetters = [clone.correctAnswerLetter];
+      clone.correctAnswerTexts = [clone.correctAnswerText];
       return clone;
     }
   }
-  // خلاف ذلك نستخدم الطريقة القديمة
+  // الطريقة القديمة
   clone.correctAnswerText = getCorrectAnswerText({ ...clone, options: baseOptions, originalOptions: baseOptions.slice() });
   clone.correctAnswer = clone.correctAnswerText;
   clone.correctIndex = resolveCorrectIndex(clone.options, clone.correctAnswerText);
+  clone.isMultiple = false;
+  clone.correctIndices = clone.correctIndex >= 0 ? [clone.correctIndex] : [];
+  clone.correctAnswerLetters = clone.correctIndex >= 0 ? [LETTERS[clone.correctIndex]] : [];
+  clone.correctAnswerTexts = clone.correctIndex >= 0 ? [clone.options[clone.correctIndex]] : [];
   return clone;
 }
-
 function startExamSession(questions, mode, direction, sourceLabel, extraMinutes, meta) {
+  // تهيئة answers لكل سؤال: إذا كان متعدداً نضع مصفوفة فارغة، وإلا نضع null
+  const answers = questions.map(q => {
+    if(q.isMultiple){
+      return { selected: [], submitted: false, correct: null };
+    } else {
+      return null; // للأسئلة الأحادية
+    }
+  });
+  const firstAnswers = questions.map(() => null);
+
   state.currentExam = {
     mode, direction,
     sourceLabel: sourceLabel || 'custom',
@@ -857,8 +991,8 @@ function startExamSession(questions, mode, direction, sourceLabel, extraMinutes,
     historyGroups: meta?.historyGroups || [],
     questions: questions.map(q => Object.assign({}, q)),
     currentIndex: 0,
-    answers: new Array(questions.length).fill(null),
-    firstAnswers: new Array(questions.length).fill(null),
+    answers: answers, // مصفوفة من الكائنات أو null
+    firstAnswers: firstAnswers, // للأسئلة الأحادية: الفهرس، وللمتعددة: كائن { selected: [] } في أول إجابة
     startTime: Date.now(),
     totalTime: (questions.length + (extraMinutes || 0)) * 60 * 1000,
     submitted: false,
@@ -886,7 +1020,43 @@ function startExamSession(questions, mode, direction, sourceLabel, extraMinutes,
 function renderRemoveWrongBtn(){ if(!state.currentExam || state.currentExam.collectionType!=='wrong' || state.currentExam.mode!=='training') return ''; const idx=state.currentExam.currentIndex; const q=state.currentExam.questions[idx]; const answered=state.currentExam.firstAnswers[idx]; if(answered===null || !isAnswerCorrect(q, answered) || !state.wrongQuestions.includes(q.id)) return ''; return `<button class="btn-secondary mt-20" onclick="confirmRemoveCurrentWrong()">✅ إزالة السؤال من الأخطاء</button>`; }
 function startSpecialExam(questions, mode, direction){ startExamSession(shuffleArray(questions.slice()).map(prepareQuestionForExam), mode, direction||'twoway', 'special', 5, { collectionType:null, displayLabel:'Special Exam', historySubjectName:'Special Exam', historyGroups:[] }); }
 
-function renderOptionButton(opt, i, idx, showAnswerState, selectedIndex, correctIdx){ let cls='option-btn'; if(selectedIndex===i) cls+=' selected'; if(showAnswerState){ if(i===correctIdx) cls+=' correct'; else if(selectedIndex===i && i!==correctIdx) cls+=' wrong'; } return `<button class="${cls}" onclick="selectOption(${i})"><span class="option-label">${LETTERS[i]})</span>${escapeHtml(cleanOptionDisplay(opt))}</button>`; }
+function renderOptionButton(opt, i, idx, showAnswerState, selected, correctIdx, isMultiple){
+  const q = state.currentExam.questions[idx];
+  // selected يمكن أن يكون رقمًا (أحادي) أو مصفوفة (متعدد)
+  let isSelected = false;
+  if(isMultiple){
+    isSelected = Array.isArray(selected) && selected.includes(i);
+  } else {
+    isSelected = (selected === i);
+  }
+
+  let cls = 'option-btn';
+  if(isSelected) cls += ' selected';
+  if(showAnswerState){
+    if(isMultiple){
+      if(q.correctIndices.includes(i)) cls += ' correct';
+      else if(isSelected) cls += ' wrong';
+    } else {
+      if(i === correctIdx) cls += ' correct';
+      else if(isSelected && i !== correctIdx) cls += ' wrong';
+    }
+  }
+
+  const inputType = isMultiple ? 'checkbox' : 'radio';
+  const inputName = isMultiple ? `q${idx}_multi` : `q${idx}`;
+  const checkedAttr = isSelected ? 'checked' : '';
+  // في حالة الإجابة الواحدة، نستخدم زر عادي مع onclick، وفي المتعددة نستخدم input مع onChange
+  if(isMultiple){
+    // نستخدم مربع اختيار
+    return `<label class="option-btn ${cls}" style="display:flex; align-items:center; gap:10px; cursor:pointer;">
+      <input type="checkbox" name="${inputName}" value="${i}" ${checkedAttr} style="width:18px; height:18px; accent-color:#f97316; background:white; border:2px solid #000; appearance:auto;" onchange="toggleMultipleOption(${idx}, ${i}, this.checked)">
+      <span class="option-label">${LETTERS[i]})</span>${escapeHtml(cleanOptionDisplay(opt))}
+    </label>`;
+  } else {
+    // زر عادي (أحادي)
+    return `<button class="${cls}" onclick="selectOption(${i})"><span class="option-label">${LETTERS[i]})</span>${escapeHtml(cleanOptionDisplay(opt))}</button>`;
+  }
+}
 function renderExam(){
   if(!state.currentExam) return;
   const t=theme();
@@ -909,20 +1079,308 @@ function renderExam(){
     if(progressEl) progressEl.classList.add('hidden');
     if(timerEl) timerEl.classList.remove('hidden');
   }
+
+  // عرض عنوان الامتحان
+  renderExamTitle();
+
   renderGrid();
-  const correctIdx=getCorrectIndex(q);
-  const showAnswerState=state.currentExam.mode==='training' && state.currentExam.showAnswer;
+  const correctIdx = q.isMultiple ? -1 : getCorrectIndex(q);
+  const showAnswerState = state.currentExam.mode==='training' && state.currentExam.showAnswer;
   const fav=state.favorites.includes(q.id);
-  const answerSummaryHtml = showAnswerState ? `<div class="answer-summary"><strong>Correct Answer:</strong> <span class="answer-value">${escapeHtml(getFormattedCurrentCorrectAnswer(q))}</span></div>` : '';
-  el('question-container').innerHTML=`<div class="question-header"><span class="question-number">Q${escapeHtml(q.number||String(idx+1))}</span><div class="question-actions"><button class="icon-btn ${fav?'active':''}" onclick="toggleFavorite('${q.id}')">💚</button><button class="icon-btn" onclick="toggleQuestionLocation()">${t.icons.location}</button></div></div><p class="question-text">${escapeHtml(q.text)}</p><div class="options-list">${q.options.map((opt,i)=>renderOptionButton(opt,i,idx,showAnswerState,state.currentExam.answers[idx],correctIdx)).join('')}</div>${answerSummaryHtml}<div class="explanation-box ${showAnswerState?'visible':''}"><strong>Explanation:</strong> ${escapeHtml(q.explanation||'No explanation available.')}</div>${renderRemoveWrongBtn()}`;
+
+  // بناء ملخص الإجابة الصحيحة
+  let answerSummaryHtml = '';
+  if(showAnswerState){
+    if(q.isMultiple){
+      const correctTexts = q.correctAnswerTexts.map((txt, i) => `${q.correctAnswerLetters[i]}) ${txt}`).join(' / ');
+      answerSummaryHtml = `<div class="answer-summary"><strong>Correct Answers:</strong> <span class="answer-value">${escapeHtml(correctTexts)}</span></div>`;
+    } else {
+      answerSummaryHtml = `<div class="answer-summary"><strong>Correct Answer:</strong> <span class="answer-value">${escapeHtml(getFormattedCurrentCorrectAnswer(q))}</span></div>`;
+    }
+  }
+
+  // بناء قائمة الخيارات
+  const selected = getSelectedForQuestion(idx);
+  const optionsHtml = q.options.map((opt, i) => {
+    return renderOptionButton(opt, i, idx, showAnswerState, selected, correctIdx, q.isMultiple);
+  }).join('');
+
+  el('question-container').innerHTML=`<div class="question-header"><span class="question-number">Q${escapeHtml(q.number||String(idx+1))}</span><div class="question-actions"><button class="icon-btn ${fav?'active':''}" onclick="toggleFavorite('${q.id}')">💚</button><button class="icon-btn" onclick="toggleQuestionLocation()">${t.icons.location}</button></div></div><p class="question-text">${escapeHtml(q.text)}</p><div class="options-list">${optionsHtml}</div>${answerSummaryHtml}<div class="explanation-box ${showAnswerState?'visible':''}"><strong>Explanation:</strong> ${escapeHtml(q.explanation||'No explanation available.')}</div>${renderRemoveWrongBtn()}`;
   el('question-container').classList.add('exam-content-ltr');
   renderExamNav();
 }
+// ===== عنوان الامتحان والـ Popup =====
+let examHelpPopupOpen = false;
+
+function renderExamTitle(){
+  const container = document.getElementById('exam-title-container');
+  if(!container){
+    // إنشاء العنصر إذا لم يكن موجوداً
+    const grid = document.getElementById('question-grid');
+    if(!grid) return;
+    const titleDiv = document.createElement('div');
+    titleDiv.id = 'exam-title-container';
+    titleDiv.style.cssText = 'text-align:center; margin-bottom:12px; display:flex; align-items:center; justify-content:center; gap:10px; flex-wrap:wrap;';
+    grid.parentNode.insertBefore(titleDiv, grid);
+  }
+
+  const exam = state.currentExam;
+  if(!exam) return;
+  const subjectName = exam.questions[0]?.subjectName || 'Unknown Subject';
+  const groups = exam.historyGroups || [];
+  let titleText = '';
+  let showHelp = false;
+
+  if(groups.length === 1){
+    // محاضرة واحدة
+    const groupName = groups[0].name || 'Lecture';
+    titleText = `${subjectName} - ${groupName}`;
+    showHelp = false;
+  } else {
+    // أكثر من محاضرة
+    titleText = subjectName;
+    showHelp = true;
+  }
+
+  const containerEl = document.getElementById('exam-title-container');
+  if(!containerEl) return;
+  containerEl.innerHTML = '';
+
+  const titleSpan = document.createElement('span');
+  titleSpan.textContent = titleText;
+  titleSpan.style.cssText = 'font-weight:800; font-size:1.1rem; color:var(--text);';
+  containerEl.appendChild(titleSpan);
+
+  if(showHelp){
+    const helpBtn = document.createElement('button');
+    helpBtn.id = 'exam-help-btn';
+    helpBtn.textContent = '?';
+    helpBtn.style.cssText = `
+      display:inline-flex; align-items:center; justify-content:center;
+      width:22px; height:22px; border-radius:50%;
+      background:#ccc; color:#fff; border:none; font-weight:900; font-size:0.8rem;
+      cursor:pointer; transition:0.2s; margin-inline-start:6px;
+      line-height:1; padding:0;
+    `;
+    helpBtn.onmouseenter = () => { helpBtn.style.transform = 'scale(1.1)'; };
+    helpBtn.onmouseleave = () => { helpBtn.style.transform = 'scale(1)'; };
+    helpBtn.onclick = (e) => {
+      e.stopPropagation();
+      toggleExamHelpPopup(helpBtn);
+    };
+    containerEl.appendChild(helpBtn);
+  }
+}
+
+function toggleExamHelpPopup(anchor){
+  const existing = document.getElementById('exam-help-popup');
+  if(existing){
+    existing.remove();
+    examHelpPopupOpen = false;
+    return;
+  }
+
+  const exam = state.currentExam;
+  if(!exam) return;
+  const groups = exam.historyGroups || [];
+  if(groups.length <= 1) return;
+
+  const popup = document.createElement('div');
+  popup.id = 'exam-help-popup';
+  popup.style.cssText = `
+    position:fixed; background:#4a4a4a; color:white; padding:12px 16px;
+    border-radius:8px; font-size:0.85rem; line-height:1.6; z-index:9999;
+    max-width:300px; box-shadow:0 8px 24px rgba(0,0,0,0.4);
+    pointer-events:auto; direction:ltr; text-align:left;
+    border:1px solid rgba(255,255,255,0.1);
+  `;
+  // محتوى القائمة
+  const list = groups.map(g => g.name || 'Lecture').join('<br>');
+  popup.innerHTML = `<div style="font-weight:bold; margin-bottom:4px;">${exam.questions[0]?.subjectName || 'Subject'}</div><div>${list}</div>`;
+
+  // تحديد موقع البوب
+  const rect = anchor.getBoundingClientRect();
+  let left = rect.left + rect.width / 2 - 100;
+  let top = rect.bottom + 8;
+  if(left < 10) left = 10;
+  if(left + 200 > window.innerWidth) left = window.innerWidth - 210;
+  if(top + 150 > window.innerHeight) top = rect.top - 150;
+  popup.style.left = left + 'px';
+  popup.style.top = top + 'px';
+
+  document.body.appendChild(popup);
+  examHelpPopupOpen = true;
+
+  // إغلاق عند النقر خارج البوب
+  const closePopup = (e) => {
+    if(popup && !popup.contains(e.target) && e.target.id !== 'exam-help-btn'){
+      popup.remove();
+      examHelpPopupOpen = false;
+      document.removeEventListener('click', closePopup);
+      document.removeEventListener('touchstart', closePopup);
+      document.removeEventListener('scroll', closePopup);
+    }
+  };
+  // نستخدم setTimeout لتجنب الإغلاق الفوري عند النقر على الزر
+  setTimeout(() => {
+    document.addEventListener('click', closePopup);
+    document.addEventListener('touchstart', closePopup);
+    document.addEventListener('scroll', closePopup);
+  }, 100);
+
+  // إغلاق عند تغيير السؤال
+  const originalRenderExam = renderExam;
+  const closeOnRender = () => {
+    if(popup && document.body.contains(popup)){
+      popup.remove();
+      examHelpPopupOpen = false;
+    }
+  };
+  // نضيف مستمعاً مؤقتاً
+  const observer = new MutationObserver(() => {
+    if(state.currentExam && state.currentExam.currentIndex !== undefined){
+      closeOnRender();
+      observer.disconnect();
+    }
+  });
+  observer.observe(document.getElementById('question-container') || document.body, { childList: true, subtree: true });
+}
+
+// إغلاق البوب عند الخروج من الامتحان
+function closeExamHelpPopup(){
+  const popup = document.getElementById('exam-help-popup');
+  if(popup) popup.remove();
+  examHelpPopupOpen = false;
+}
+
+// تعديل exitExam لإغلاق البوب
+const originalExitExam = exitExam;
+exitExam = function(){
+  closeExamHelpPopup();
+  originalExitExam();
+};
 function renderGrid(){ if(!state.currentExam) return; const grid=el('question-grid'); grid.innerHTML=''; state.currentExam.questions.forEach((q,idx)=>{ let cls='grid-btn'; if(idx===state.currentExam.currentIndex) cls+=' current'; else if(state.currentExam.answers[idx]!==null){ if(state.currentExam.mode==='training' && state.currentExam.firstAnswers[idx]!==null) cls+=isAnswerCorrect(q,state.currentExam.firstAnswers[idx])?' answered':' wrong'; else cls+=' answered'; } if(state.currentExam.direction==='oneway' && idx<state.currentExam.currentIndex) cls+=' disabled'; const btn=document.createElement('button'); btn.className=cls; btn.textContent=String(idx+1); btn.onclick=()=>navigateToQuestion(idx); grid.appendChild(btn); }); }
-function renderExamNav(){ if(!state.currentExam) return; const nav=el('exam-nav'); const idx=state.currentExam.currentIndex, last=state.currentExam.questions.length-1; let prevBtn='<span></span>', nextBtn='<span></span>'; if(state.currentExam.direction==='twoway' && idx>0) prevBtn='<button class="btn-secondary" onclick="prevQuestion()">Previous ←</button>'; if(state.currentExam.mode==='training'){ if(state.currentExam.showAnswer) nextBtn=idx<last?'<button class="btn-primary" onclick="nextQuestion()">Next →</button>':'<button class="btn-primary" onclick="finishExam()">Finish</button>'; else if(state.currentExam.answers[idx]!==null) nextBtn='<button class="btn-small" onclick="showAnswer()">Show Answer</button>'; } else if(state.currentExam.answers[idx]!==null) nextBtn=idx<last?'<button class="btn-primary" onclick="nextQuestion()">Next →</button>':'<button class="btn-primary" onclick="finishExam()">Finish</button>'; nav.innerHTML=prevBtn + nextBtn; }
-function selectOption(optionIndex){ if(!state.currentExam || state.currentExam.submitted) return; if(state.currentExam.mode==='training' && state.currentExam.showAnswer) return; const idx=state.currentExam.currentIndex; const q=state.currentExam.questions[idx]; state.currentExam.answers[idx]=optionIndex; if(state.currentExam.firstAnswers[idx]===null) state.currentExam.firstAnswers[idx]=optionIndex; const correct=isAnswerCorrect(q,optionIndex); if(state.currentExam.mode==='training'){ if(state.settings.feedbackEnabled) playEffectSound(correct?'right':'wrong'); if(correct){ state.currentExam.showAnswer=true; if(state.settings.animations!==false) showFireworks(48,12); } else { if(!state.wrongQuestions.includes(q.id)){ state.wrongQuestions.push(q.id); saveWrongQuestions(); } showToast(themeWrongMessage(),'error'); } saveExamState(); renderExam(); } else { saveExamState(); renderExam(); } }
+function renderExamNav(){
+  if(!state.currentExam) return;
+  const nav=el('exam-nav');
+  const idx=state.currentExam.currentIndex, last=state.currentExam.questions.length-1;
+  let prevBtn='<span></span>', nextBtn='<span></span>', submitBtn='';
+
+  if(state.currentExam.direction==='twoway' && idx>0) prevBtn='<button class="btn-secondary" onclick="prevQuestion()">Previous ←</button>';
+
+  const q = state.currentExam.questions[idx];
+  const isMultiple = q && q.isMultiple;
+  const answerObj = state.currentExam.answers[idx];
+  let selected = [];
+  let submitted = false;
+  let correct = null;
+  if(isMultiple && answerObj && typeof answerObj === 'object'){
+    selected = answerObj.selected || [];
+    submitted = answerObj.submitted || false;
+    correct = answerObj.correct;
+  }
+
+  if(state.currentExam.mode === 'training'){
+    if(isMultiple){
+      // إذا كان متعدداً
+      if(submitted){
+        // تم الإرسال بالفعل
+        if(correct){
+          // صحيح: نعرض Next
+          nextBtn = idx < last ? '<button class="btn-primary" onclick="nextQuestion()">Next →</button>' : '<button class="btn-primary" onclick="finishExam()">Finish</button>';
+        } else {
+          // خاطئ: نعرض Show Answer ويمكن للمستخدم تعديل وإعادة الإرسال
+          nextBtn = '';
+          submitBtn = `<button class="btn-small" onclick="submitMultipleChoice(${idx})" style="background:var(--primary); color:#fff;">إرسال</button>`;
+          // نعرض زر Show Answer بجانب إرسال
+          submitBtn += `<button class="btn-small" onclick="showAnswer()" style="background:var(--border); color:var(--text);">Show Answer</button>`;
+        }
+      } else {
+        // لم يُرسل بعد
+        if(selected.length > 0){
+          submitBtn = `<button class="btn-small" onclick="submitMultipleChoice(${idx})" style="background:var(--primary); color:#fff;">إرسال</button>`;
+        }
+        // لا نعرض Next ولا Show Answer
+        nextBtn = '';
+      }
+    } else {
+      // أحادي
+      if(state.currentExam.showAnswer){
+        nextBtn = idx < last ? '<button class="btn-primary" onclick="nextQuestion()">Next →</button>' : '<button class="btn-primary" onclick="finishExam()">Finish</button>';
+      } else if(state.currentExam.answers[idx] !== null){
+        nextBtn = '<button class="btn-small" onclick="showAnswer()">Show Answer</button>';
+      }
+    }
+  } else {
+    // وضع الامتحان: نعرض Next مباشرة إذا تم اختيار إجابة (أحادية أو متعددة)
+    let hasAnswer = false;
+    if(isMultiple){
+      hasAnswer = (selected.length > 0);
+    } else {
+      hasAnswer = (state.currentExam.answers[idx] !== null);
+    }
+    if(hasAnswer){
+      nextBtn = idx < last ? '<button class="btn-primary" onclick="nextQuestion()">Next →</button>' : '<button class="btn-primary" onclick="finishExam()">Finish</button>';
+    }
+  }
+
+  nav.innerHTML = prevBtn + submitBtn + nextBtn;
+}
+function selectOption(optionIndex){
+  if(!state.currentExam || state.currentExam.submitted) return;
+  if(state.currentExam.mode==='training' && state.currentExam.showAnswer) return;
+  const idx=state.currentExam.currentIndex;
+  const q=state.currentExam.questions[idx];
+  if(q.isMultiple) return; // لا تستخدم هذه الدالة للأسئلة المتعددة
+
+  state.currentExam.answers[idx]=optionIndex;
+  if(state.currentExam.firstAnswers[idx]===null) state.currentExam.firstAnswers[idx]=optionIndex;
+  const correct=isAnswerCorrect(q,optionIndex);
+  if(state.currentExam.mode==='training'){
+    if(state.settings.feedbackEnabled) playEffectSound(correct?'right':'wrong');
+    if(correct){
+      state.currentExam.showAnswer=true;
+      if(state.settings.animations!==false) showFireworks(48,12);
+    } else {
+      if(!state.wrongQuestions.includes(q.id)){
+        state.wrongQuestions.push(q.id);
+        saveWrongQuestions();
+      }
+      showToast(themeWrongMessage(),'error');
+    }
+    saveExamState();
+    renderExam();
+  } else {
+    saveExamState();
+    renderExam();
+  }
+}
 function themeWrongMessage(){ switch(state.settings.theme){ case 'desert': return 'الجواب انحرف عن مسار القافلة.'; case 'space': return 'Trajectory mismatch. Try again.'; case 'pirates': return 'Wrong turn on the treasure map.'; case 'castle': return 'The dragon dodged that answer.'; case 'lab': return 'Experiment unstable. Re-check the sample.'; default: return 'إجابة خاطئة.'; } }
-function showAnswer(){ if(!state.currentExam) return; state.currentExam.showAnswer=true; const idx=state.currentExam.currentIndex; const q=state.currentExam.questions[idx]; const ans=state.currentExam.firstAnswers[idx]; if(ans!==null && !isAnswerCorrect(q,ans) && !state.wrongQuestions.includes(q.id)){ state.wrongQuestions.push(q.id); saveWrongQuestions(); } saveExamState(); renderExam(); }
+function showAnswer(){
+  if(!state.currentExam) return;
+  state.currentExam.showAnswer = true;
+  const idx = state.currentExam.currentIndex;
+  const q = state.currentExam.questions[idx];
+  // بالنسبة للإجابات المتعددة، لا نضيف إلى الأخطاء هنا، لأن التقييم تم في submitMultipleChoice
+  // لكن للتأكد، إذا كانت الإجابة خاطئة ولم تسجل، نضيفها
+  if(q.isMultiple){
+    const answerObj = state.currentExam.answers[idx];
+    if(answerObj && typeof answerObj === 'object' && answerObj.submitted && !answerObj.correct){
+      if(!state.wrongQuestions.includes(q.id)){
+        state.wrongQuestions.push(q.id);
+        saveWrongQuestions();
+      }
+    }
+  } else {
+    const ans = state.currentExam.firstAnswers[idx];
+    if(ans !== null && !isAnswerCorrect(q, ans) && !state.wrongQuestions.includes(q.id)){
+      state.wrongQuestions.push(q.id);
+      saveWrongQuestions();
+    }
+  }
+  saveExamState();
+  renderExam();
+}
 function nextQuestion(){ if(!state.currentExam) return; if(state.currentExam.currentIndex<state.currentExam.questions.length-1){ state.currentExam.currentIndex+=1; state.currentExam.showAnswer=false; saveExamState(); renderExam(); scrollQuestionIntoView(true); } }
 function prevQuestion(){ if(!state.currentExam || state.currentExam.direction!=='twoway') return; if(state.currentExam.currentIndex>0){ state.currentExam.currentIndex-=1; if(state.currentExam.mode==='training') state.currentExam.showAnswer=state.currentExam.answers[state.currentExam.currentIndex]!==null; saveExamState(); renderExam(); scrollQuestionIntoView(true); } }
 function navigateToQuestion(index){ if(!state.currentExam) return; if(state.currentExam.direction==='oneway' && index!==state.currentExam.currentIndex) return; state.currentExam.currentIndex=index; if(state.currentExam.mode==='training') state.currentExam.showAnswer=state.currentExam.answers[index]!==null; saveExamState(); renderExam(); scrollQuestionIntoView(true); }
@@ -1105,7 +1563,30 @@ function submitExamFinish(){
 }
 function saveProgress(){ if(!state.currentExam) return; const answers=state.currentExam.mode==='exam'?state.currentExam.answers:state.currentExam.firstAnswers; state.currentExam.questions.forEach((q,idx)=>{ if(answers[idx]===null) return; addProgressId('subject:'+q.subjectName,q.id); const actual=q.originalSourceType||q.sourceType; if(actual==='lecture') addProgressId('lecture:'+q.subjectName+'/'+q.lectureName,q.id); if(actual==='ai') addProgressId('ai:'+q.subjectName+'/'+q.lectureName,q.id); if(q.batchName) addProgressId('year:'+q.subjectName+'/'+q.batchName,q.id); }); saveProgressStore(); updateStatisticsIfOpen(); renderMemories(); }
 function showWaitingMessages(){ const waitDiv=el('results-waiting'), contentDiv=el('results-content'), reviewDiv=el('results-review'), messageEl=el('waiting-message'); const messages=['انتظر ...','قاعد بصلّح لك الامتحان ...','استنى شوي ...','هاي قرّبت أكمل ...','أصبر ثواني ...','هيني كمّلت 🫡🐦‍🔥💚']; waitDiv.classList.remove('hidden'); reviewDiv.classList.add('hidden'); reviewDiv.innerHTML=''; contentDiv.innerHTML=''; let idx=0; messageEl.textContent=messages[0]; const interval=setInterval(()=>{ idx=Math.min(idx+1, messages.length-1); messageEl.textContent=messages[idx]; },1150); setTimeout(()=>{ clearInterval(interval); waitDiv.classList.add('hidden'); showResults(); },7000); }
-function calculateScore(exam){ const questions=exam.questions; const answers=exam.mode==='exam'?exam.answers:exam.firstAnswers; const total=questions.length; const answered=answers.filter(a=>a!==null).length; const correct=answers.reduce((sum,a,idx)=>sum + (a!==null && isAnswerCorrect(questions[idx],a) ? 1 : 0),0); return {total, answered, correct, unanswered:total-answered, incorrect:answered-correct, score: total>0 ? Math.round((correct/total)*100) : 0}; }
+function calculateScore(exam){
+  const questions=exam.questions;
+  const answers=exam.mode==='exam'?exam.answers:exam.firstAnswers;
+  const total=questions.length;
+  let answered=0;
+  let correct=0;
+  for(let idx=0; idx<total; idx++){
+    const q=questions[idx];
+    const ans=answers[idx];
+    if(q.isMultiple){
+      if(ans && typeof ans === 'object' && Array.isArray(ans.selected) && ans.selected.length > 0){
+        answered++;
+        if(ans.submitted && ans.correct) correct++;
+        else if(ans.submitted === undefined && ans.correct !== undefined && ans.correct) correct++; // للتوافق
+      }
+    } else {
+      if(ans !== null){
+        answered++;
+        if(isAnswerCorrect(q, ans)) correct++;
+      }
+    }
+  }
+  return {total, answered, correct, unanswered:total-answered, incorrect:answered-correct, score: total>0 ? Math.round((correct/total)*100) : 0};
+}
 function renderMasteredWrongButton(){ if(!state.currentExam || !state.currentExam.masteredWrongIds || !state.currentExam.masteredWrongIds.length) return ''; return `<button class="btn-secondary mt-10" onclick="confirmBulkRemoveMasteredWrong()">✅ إزالة الأسئلة التي تمكنت منها من الأسئلة الخاطئة</button>`; }
 function confirmBulkRemoveMasteredWrong(){ if(!state.currentExam || !state.currentExam.masteredWrongIds || !state.currentExam.masteredWrongIds.length) return; askConfirm('سيتم إزالة كل الأسئلة التي أجبت عنها بشكل صحيح في هذا الامتحان من قائمة الأسئلة الخاطئة. هل تريد المتابعة؟', ()=>removeWrongQuestionsByIds(state.currentExam.masteredWrongIds.slice())); }
 function showResults(){ if(!state.currentExam) return; const t=theme(); showScreen('results-screen'); el('results-title').textContent=t.icons.results+' '+t.texts.resultsTitle; const stats=calculateScore(state.currentExam); const timeSpent=state.currentExam.endTime ? Math.round((state.currentExam.endTime-state.currentExam.startTime)/1000) : 0; const mins=Math.floor(timeSpent/60), secs=timeSpent%60; if(stats.score>=50){ playCelebrateSound(); if(state.settings.animations!==false) showFireworks(110,24); } el('results-content').innerHTML=`<div class="result-score">${stats.score}%</div><div class="result-details"><div class="result-card"><div class="value">${stats.correct}/${stats.total}</div><div class="label">Correct</div></div><div class="result-card"><div class="value">${mins}m ${secs}s</div><div class="label">Time Spent</div></div><div class="result-card"><div class="value">${stats.unanswered}</div><div class="label">Unanswered</div></div><div class="result-card"><div class="value">${stats.incorrect}</div><div class="label">Incorrect</div></div></div><button class="btn-primary mt-20" onclick="reviewExam()">${t.icons.review} Review Questions</button>${renderMasteredWrongButton()}<button class="btn-secondary mt-10" onclick="goHome()">${t.icons.exams} Back to Home</button>`; }
@@ -1517,46 +1998,143 @@ function checkResumeExam() {
 }
 
 function normalizeText(text){ return String(text||'').replace(/^\uFEFF/,'').replace(/\r\n/g,'\n').replace(/\r/g,'\n').replace(/\t/g,'    ').replace(/\/\/\/\/\/\/\/\//g,'\n').trim(); }
-function parseQuestionFile(raw, meta){ const text=normalizeText(raw); if(!text) return []; let blocks=text.split(/(?:^|\n)\s*###\s*(?=\n|$)/g).map(x=>x.trim()).filter(Boolean); if(blocks.length<=1){ const paragraphs=text.split(/\n{2,}/).map(x=>x.trim()).filter(Boolean); if(paragraphs.length<=1) blocks=[text]; else { blocks=[]; let current=[]; let hasCorrect=false; for(let i=0;i<paragraphs.length;i++){ const p=paragraphs[i]; const first=(p.split('\n').find(l=>l.trim())||'').trim(); const looksNew=current.length>0 && hasCorrect && !/^(Correct\s*Answer|Explanation)\s*:/i.test(first) && !/^[A-E][\)\.\-]/.test(first) && !isPageLine(first); if(looksNew){ blocks.push(current.join('\n\n').trim()); current=[]; hasCorrect=false; } current.push(p); if(/^\s*Correct\s*Answer\s*:/im.test(p)) hasCorrect=true; if(i===paragraphs.length-1 && current.length) blocks.push(current.join('\n\n').trim()); } } }
+function parseQuestionFile(raw, meta){
+  const text=normalizeText(raw);
+  if(!text) return [];
+  let blocks=text.split(/(?:^|\n)\s*###\s*(?=\n|$)/g).map(x=>x.trim()).filter(Boolean);
+  if(blocks.length<=1){
+    const paragraphs=text.split(/\n{2,}/).map(x=>x.trim()).filter(Boolean);
+    if(paragraphs.length<=1) blocks=[text];
+    else { blocks=[]; let current=[]; let hasCorrect=false; for(let i=0;i<paragraphs.length;i++){ const p=paragraphs[i]; const first=(p.split('\n').find(l=>l.trim())||'').trim(); const looksNew=current.length>0 && hasCorrect && !/^(Correct\s*Answer|Explanation)\s*:/i.test(first) && !/^[A-E][\)\.\-]/.test(first) && !isPageLine(first); if(looksNew){ blocks.push(current.join('\n\n').trim()); current=[]; hasCorrect=false; } current.push(p); if(/^\s*Correct\s*Answer\s*:/im.test(p)) hasCorrect=true; if(i===paragraphs.length-1 && current.length) blocks.push(current.join('\n\n').trim()); } } }
   const questions=[]; let fallback=meta.startCounter||1;
   for(let blockIndex=0; blockIndex<blocks.length; blockIndex++){
-    const lines=blocks[blockIndex].split('\n').map(l=>l.trim()).filter(Boolean); if(!lines.length || !lines.some(l=>/^Correct\s*Answer\s*:/i.test(l))) continue; let questionNumber=''; let questionText=''; let options=[]; let correctAnswer=''; let correctAnswerLetter=''; let explanation=''; let batchName=''; let pageNumber=''; let startIndex=0; const head=(lines[0]||'').match(/^Question\s*(\d+)\s*[:\-.]?\s*(.*)$/i); if(head){ questionNumber=head[1]||''; if(head[2]) lines[0]=head[2].trim(); else startIndex=1; } const ansIdx=lines.findIndex(l=>/^Correct\s*Answer\s*:/i.test(l)); if(ansIdx===-1) continue; const before=lines.slice(startIndex, ansIdx); const firstOpt=before.findIndex(l=>/^[A-E][\)\.\-]\s*/i.test(l)); if(firstOpt===-1) continue; questionText=before.slice(0,firstOpt).join(' ').trim() || ('Question '+fallback); options=before.slice(firstOpt).filter(l=>/^[A-E][\)\.\-]\s*/i.test(l)).map(stripOptionPrefix); correctAnswer=lines[ansIdx].replace(/^Correct\s*Answer\s*:\s*/i,'').trim();
-    // استخراج حرف الإجابة الصحيحة (A-E)
-    const letterMatch = correctAnswer.match(/^([A-E])\s*[\)\.\-]\s*/i);
-    if(letterMatch) correctAnswerLetter = letterMatch[1].toUpperCase();
-    else correctAnswerLetter = '';
-    let i=ansIdx+1; if(i<lines.length && /^Explanation\s*:/i.test(lines[i])){ const exp=[]; const first=lines[i].replace(/^Explanation\s*:\s*/i,'').trim(); if(first) exp.push(first); i++; while(i<lines.length && !isMetadataLine(lines[i])){ exp.push(lines[i]); i++; } explanation=exp.join(' ').trim(); } while(i<lines.length){ const line=lines[i]; if(isPageLine(line)) pageNumber=line; else if(!batchName && isBatchLine(line)) batchName=line; else if(!batchName && looksLikeMetadataTail(line)) batchName=line; else if(!explanation && !/^Explanation\s*:/i.test(line)) explanation=[explanation,line].filter(Boolean).join(' ').trim(); i++; } if(!questionNumber) questionNumber=String(fallback);
-    // تحديد الإجابة الصحيحة باستخدام الحرف أولاً
-    let correctIndex = -1;
-    let correctAnswerText = '';
-    if(correctAnswerLetter){
-      const letterIndex = correctAnswerLetter.charCodeAt(0) - 65;
-      if(letterIndex >= 0 && letterIndex < options.length){
-        correctIndex = letterIndex;
-        correctAnswerText = options[letterIndex];
+    let lines=blocks[blockIndex].split('\n').map(l=>l.trim()).filter(Boolean);
+    if(!lines.length || !lines.some(l=>/^Correct\s*Answer\s*:/i.test(l))) continue;
+
+    // الكشف عن السطر ~Choose the correct answers~
+    let isMultiple = false;
+    const chooseLineIndex = lines.findIndex(l => /^~Choose the correct answers~$/i.test(l));
+    if(chooseLineIndex !== -1){
+      isMultiple = true;
+      lines.splice(chooseLineIndex, 1); // إزالة السطر
+    }
+
+    let questionNumber=''; let questionText=''; let options=[]; let correctAnswer=''; let correctAnswerLetter=''; let explanation=''; let batchName=''; let pageNumber=''; let startIndex=0;
+    const head=(lines[0]||'').match(/^Question\s*(\d+)\s*[:\-.]?\s*(.*)$/i);
+    if(head){ questionNumber=head[1]||''; if(head[2]) lines[0]=head[2].trim(); else startIndex=1; }
+    const ansIdx=lines.findIndex(l=>/^Correct\s*Answer\s*:/i.test(l));
+    if(ansIdx===-1) continue;
+    const before=lines.slice(startIndex, ansIdx);
+    const firstOpt=before.findIndex(l=>/^[A-E][\)\.\-]\s*/i.test(l));
+    if(firstOpt===-1) continue;
+    questionText=before.slice(0,firstOpt).join(' ').trim() || ('Question '+fallback);
+    options=before.slice(firstOpt).filter(l=>/^[A-E][\)\.\-]\s*/i.test(l)).map(stripOptionPrefix);
+    correctAnswer=lines[ansIdx].replace(/^Correct\s*Answer\s*:\s*/i,'').trim();
+
+    let correctIndices = [];
+    let correctAnswerLetters = [];
+    let correctAnswerTexts = [];
+
+    if(isMultiple){
+      // تقسيم الإجابة على "/"
+      const parts = correctAnswer.split('/').map(s => s.trim()).filter(Boolean);
+      parts.forEach(part => {
+        const letterMatch = part.match(/^([A-E])\s*[\)\.\-]\s*/i);
+        if(letterMatch){
+          const letter = letterMatch[1].toUpperCase();
+          const idx = letter.charCodeAt(0) - 65;
+          if(idx >= 0 && idx < options.length){
+            correctIndices.push(idx);
+            correctAnswerLetters.push(letter);
+            correctAnswerTexts.push(options[idx]);
+          }
+        }
+      });
+      // إذا لم يتم استخراج أي إجابة، نعتبر السؤال أحادي
+      if(correctIndices.length === 0){
+        isMultiple = false;
       }
     }
-    if(correctIndex === -1){
-      // فشل في استخدام الحرف، نستخدم الطريقة النصية القديمة
-      const possibleIndex = resolveCorrectIndex(options, correctAnswer);
-      if(possibleIndex >= 0 && options[possibleIndex]){
-        correctIndex = possibleIndex;
-        correctAnswerText = options[possibleIndex];
-      } else {
-        correctAnswerText = stripOptionPrefix(correctAnswer);
-        // نحاول مرة أخرى مع النص المجرد
-        const fallbackIndex = resolveCorrectIndex(options, correctAnswerText);
-        if(fallbackIndex >= 0 && options[fallbackIndex]){
-          correctIndex = fallbackIndex;
-          correctAnswerText = options[fallbackIndex];
+
+    // إذا لم يكن متعدداً، نتعامل كالسابق
+    if(!isMultiple){
+      const letterMatch = correctAnswer.match(/^([A-E])\s*[\)\.\-]\s*/i);
+      if(letterMatch) correctAnswerLetter = letterMatch[1].toUpperCase();
+      else correctAnswerLetter = '';
+      let correctIndex = -1;
+      let correctAnswerText = '';
+      if(correctAnswerLetter){
+        const letterIndex = correctAnswerLetter.charCodeAt(0) - 65;
+        if(letterIndex >= 0 && letterIndex < options.length){
+          correctIndex = letterIndex;
+          correctAnswerText = options[letterIndex];
         }
       }
+      if(correctIndex === -1){
+        const possibleIndex = resolveCorrectIndex(options, correctAnswer);
+        if(possibleIndex >= 0 && options[possibleIndex]){
+          correctIndex = possibleIndex;
+          correctAnswerText = options[possibleIndex];
+        } else {
+          correctAnswerText = stripOptionPrefix(correctAnswer);
+          const fallbackIndex = resolveCorrectIndex(options, correctAnswerText);
+          if(fallbackIndex >= 0 && options[fallbackIndex]){
+            correctIndex = fallbackIndex;
+            correctAnswerText = options[fallbackIndex];
+          }
+        }
+      }
+      correctIndices = [correctIndex];
+      correctAnswerLetters = correctIndex >= 0 ? [LETTERS[correctIndex]] : [];
+      correctAnswerTexts = correctIndex >= 0 ? [options[correctIndex]] : [];
     }
+
+    let i=ansIdx+1;
+    if(i<lines.length && /^Explanation\s*:/i.test(lines[i])){
+      const exp=[]; const first=lines[i].replace(/^Explanation\s*:\s*/i,'').trim(); if(first) exp.push(first); i++;
+      while(i<lines.length && !isMetadataLine(lines[i])){ exp.push(lines[i]); i++; }
+      explanation=exp.join(' ').trim();
+    }
+    while(i<lines.length){
+      const line=lines[i];
+      if(isPageLine(line)) pageNumber=line;
+      else if(!batchName && isBatchLine(line)) batchName=line;
+      else if(!batchName && looksLikeMetadataTail(line)) batchName=line;
+      else if(!explanation && !/^Explanation\s*:/i.test(line)) explanation=[explanation,line].filter(Boolean).join(' ').trim();
+      i++;
+    }
+    if(!questionNumber) questionNumber=String(fallback);
+
     const id=[slugify(meta.subjectName),slugify(meta.sourceType),slugify(meta.lectureName),slugify(questionNumber),hashString(questionText).slice(0,10)].join('__');
-    questions.push({id,number:questionNumber,text:questionText,options,originalOptions:options.slice(),correctAnswer,correctAnswerText,correctIndex,correctAnswerLetter,explanation,batchName,pageNumber,subjectName:meta.subjectName,subjectId:meta.subjectId||slugify(meta.subjectName),lectureName:meta.lectureName,groupName:meta.lectureName,sourceType:meta.sourceType,sourcePath:meta.sourcePath}); fallback++; }
+    const questionObj = {
+      id,
+      number: questionNumber,
+      text: questionText,
+      options,
+      originalOptions: options.slice(),
+      correctAnswer,
+      correctAnswerText: correctAnswerTexts.join(' / '),
+      correctIndex: correctIndices.length === 1 ? correctIndices[0] : -1,
+      correctAnswerLetter: correctAnswerLetters.length === 1 ? correctAnswerLetters[0] : '',
+      isMultiple,
+      correctIndices,
+      correctAnswerLetters,
+      correctAnswerTexts,
+      explanation,
+      batchName,
+      pageNumber,
+      subjectName: meta.subjectName,
+      subjectId: meta.subjectId || slugify(meta.subjectName),
+      lectureName: meta.lectureName,
+      groupName: meta.lectureName,
+      sourceType: meta.sourceType,
+      sourcePath: meta.sourcePath
+    };
+    questions.push(questionObj);
+    fallback++;
+  }
   return questions;
 }
-
 function normalizeImportedQuestion(question, subject, group, fallbackSourceType){
   const q = Object.assign({}, question || {});
   q.subjectName = q.subjectName || subject.name;
@@ -1800,8 +2378,14 @@ window.addEventListener('DOMContentLoaded', async ()=>{
   'من سار على الدرب وصل، ولو طال الطريق.',
   'الساعي إلى العلم كالساعي إلى كنز لا ينفد.',
   'لا تؤجل جهد اليوم إلى غدٍ فتجتمع عليك الأيام.',
-  'كل صفحة تقرؤها اليوم تبني طبيبًا أفضل غدًا.'
+  'كل صفحة تقرؤها اليوم تبني طبيبًا أفضل غدًا.',
+  '{ وَقُل رَّبِّ زِدۡنِی عِلۡمࣰا }',
+  '{ فَٱصۡبِرۡ صَبۡرࣰا جَمِیلًا }',
+  '{ یَرۡفَعِ ٱللَّهُ ٱلَّذِینَ ءَامَنُوا۟ مِنكُمۡ وَٱلَّذِینَ أُوتُوا۟ ٱلۡعِلۡمَ دَرَجَـٰتࣲۚ وَٱللَّهُ بِمَا تَعۡمَلُونَ خَبِیرࣱ }',
+  '{ سَنُرِیهِمۡ ءَایَـٰتِنَا فِی ٱلۡـَٔافَاقِ وَفِیۤ أَنفُسِهِمۡ حَتَّىٰ یَتَبَیَّنَ لَهُمۡ أَنَّهُ ٱلۡحَقُّۗ }',
+  '{ قُلۡ هَلۡ یَسۡتَوِی ٱلَّذِینَ یَعۡلَمُونَ وَٱلَّذِینَ لَا یَعۡلَمُونَۗ إِنَّمَا یَتَذَكَّرُ أُو۟لُوا۟ ٱلۡأَلۡبَـٰبِ }'
 ];
+
   if(el('random-quote')) el('random-quote').textContent=quotes[Math.floor(Math.random()*quotes.length)];
   document.addEventListener('click',e=>{ if(!e.target.closest('.subject-card')) closeSubjectActions(); });
   primeAudioUnlock(); await prepareStaticEffectAudio();
