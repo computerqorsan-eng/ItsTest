@@ -1,0 +1,79 @@
+If a patient has a visual acuity of 6/12, what does this mean?
+A) They can see at 6 meters what a person with normal vision can see at 12 meters
+B) They can see at 12 meters what a person with normal vision can see at 6 meters
+C) Their vision is better than normal, resolving details invisible to the average eye at 6 meters
+D) They have normal visual acuity equivalent to 6/6
+E) They can only perceive hand movements at a distance of 6 meters
+Correct Answer: A) They can see at 6 meters what a person with normal vision can see at 12 meters
+Explanation:
+6/12 = test distance/normal distance, meaning reduced acuity, not enhanced. B reverses the fraction (would mean better-than-normal vision), C and D wrongly describe normal or supranormal vision, and E describes near-blindness, far worse than 6/12.
+###
+This test is used to asses (The image shows: A circle of green dots containing the number 12 made of orange dots) ?
+A) Visual acuity
+B) Pupillary reflex
+C) Visual field
+D) Color vision
+E) Contrast sensitivity
+Correct Answer: D) Color vision
+Explanation:
+This is an Ishihara pseudoisochromatic plate, used specifically for color vision testing. A uses the Snellen chart, B uses a light source, C uses confrontation/perimetry, and E uses contrast charts — none use colored dot plates.
+###
+What condition causes acute painful loss of vision?
+A) Central retinal artery occlusion
+B) Acute angle-closure glaucoma
+C) Cataract
+D) Age-related macular degeneration
+E) Retinal detachment
+Correct Answer: B) Acute angle-closure glaucoma
+Explanation:
+Only angle-closure glaucoma is both acute and painful. A and E are acute but painless, while C and D are painless and gradual, not acute.
+###
+All are causes of this sign except (The image shows: A red eye) ?
+A) Allergic conjunctivitis
+B) Subconjunctival hemorrhage
+C) Bacterial keratitis
+D) Anterior uveitis
+E) Macular edema
+Correct Answer: E) Macular edema
+Explanation:
+Macular edema is a retinal/central vision problem, not a cause of ocular redness. A–D all directly cause a red eye through conjunctival, corneal, or intraocular inflammation/hemorrhage.
+###
+What is the term for pupils of different sizes?
+A) Nystagmus
+B) Anisocoria
+C) Ptosis
+D) Diplopia
+E) RAPD
+Correct Answer: B) Anisocoria
+Explanation:
+Anisocoria specifically means unequal pupil size. Nystagmus is involuntary eye movement, ptosis is lid drooping, diplopia is double vision, and RAPD is an abnormal light reflex — none describe pupil size difference.
+###
+What is the visual field exam called?
+A) Ishihara test
+B) Swinging light test
+C) Confrontation test
+D) Snellen test
+E) Ophthalmoscopy
+Correct Answer: C) Confrontation test
+Explanation:
+The confrontation test is the bedside visual field exam. A tests color, B tests for RAPD, D tests acuity, and E examines the fundus — all test different functions.
+###
+What are the three components involved in accommodation?
+A) Accommodation, pupillary constriction, and convergence
+B) Accommodation, pupillary constriction, and divergence
+C) Accommodation, pupillary dilation, and divergence
+D) Accommodation, pupillary dilation, and convergence
+E) Convergence, dilation, and visual acuity
+Correct Answer: A) Accommodation, pupillary constriction, and convergence
+Explanation:
+The near reflex triad is lens accommodation + pupillary constriction + convergence. B and C swap in divergence (the opposite of convergence), D swaps in dilation (opposite of constriction), and E replaces accommodation with visual acuity, which isn't part of the triad.
+###
+The limbus houses germinative stem cells that maintain the corneal epithelium. What is the primary function of this layer?
+A) Anchoring the epithelium via desmosomes only
+B) Maintaining endothelial cell density
+C) Providing mechanical strength via collagen fibrils
+D) Regulating aqueous humor outflow
+E) Regeneration and proliferation of epithelial cells
+Correct Answer: E) Regeneration and proliferation of epithelial cells
+Explanation:
+Limbal stem cells continuously regenerate the corneal epithelium, allowing rapid repair after abrasion by cell spreading and proliferation. A is incomplete, as anchoring also involves hemidesmosomes and fibrils, not desmosomes alone. B is wrong — the endothelium instead repairs by cell spreading alone with loss of density, no regeneration. C and D describe Bowman's layer and the trabecular meshwork, unrelated structures.

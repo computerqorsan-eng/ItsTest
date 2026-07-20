@@ -1,0 +1,59 @@
+A young male presents with unilateral epistaxis. What is the most likely diagnosis?
+A) Septal deviation
+B) Allergic rhinitis
+C) Juvenile nasal angiofibroma
+D) Nasal polyp
+E) Foreign body
+Correct Answer: C) Juvenile nasal angiofibroma
+Explanation:
+Unilateral epistaxis in a young male (adolescent) is a classic presentation of juvenile nasal angiofibroma (JNA), a vascular tumor requiring rule-out by nasal endoscopy. Septal deviation and foreign body typically cause obstruction rather than recurrent bleeding, and allergic rhinitis/nasal polyps are usually bilateral.
+###
+A patient has bone conduction better than air conduction on the right ear (negative Rinne). On Weber's test, sound is heard better in the right ear. What is the diagnosis?
+A) Right conductive hearing loss
+B) Left conductive hearing loss
+C) Right sensorineural hearing loss
+D) Bilateral sensorineural hearing loss
+E) Left sensorineural hearing loss
+Correct Answer: A) Right conductive hearing loss
+Explanation:
+A negative Rinne test (bone conduction > air conduction) on the right ear indicates a conductive problem in that ear, and Weber lateralizing to the same (right) ear confirms this, since sound lateralizes toward the affected ear in conductive hearing loss. In sensorineural loss, Rinne would remain positive (air > bone) and Weber would lateralize to the opposite, better-hearing ear.
+###
+What tuning fork frequency is used for hearing tests?
+A) 128 Hz
+B) 256 Hz
+C) 1024 Hz
+D) 512 Hz
+E) 2048 Hz
+Correct Answer: D) 512 Hz
+Explanation:
+The standard tuning fork used for Weber's and Rinne's tests is 512 Hz, providing a balance between adequate duration of vibration and clinical accuracy. Lower frequencies (128–256 Hz) are felt more than heard, while higher frequencies decay too quickly for reliable bedside testing.
+###
+A child presents with a midline neck lump that moves when they stick out their tongue. What is the diagnosis?
+A) Dermoid cyst
+B) Submental lymph node
+C) Thyroid isthmus swelling
+D) Branchial cyst
+E) Thyroglossal cyst
+Correct Answer: E) Thyroglossal cyst
+Explanation:
+A thyroglossal cyst is a midline neck lump that characteristically moves upward on tongue protrusion due to its embryological connection to the foramen cecum. Thyroid isthmus swelling moves with swallowing but not tongue protrusion, dermoid cysts are non-tender and mobile without this movement, and branchial cysts are lateral, not midline.
+###
+A 55-year-old male smoker presents with hoarseness of voice persisting for 3 weeks. What is the most appropriate next step in management?
+A) Reassure and review in 3 months
+B) Trial of proton pump inhibitor
+C) Empirical antibiotics
+D) Urgent referral to ENT for fiberoptic laryngoscopy
+E) Voice rest and speech therapy
+Correct Answer: D) Urgent referral to ENT for fiberoptic laryngoscopy
+Explanation:
+Any smoker with hoarseness lasting more than 3 weeks is a red flag requiring urgent ENT referral for fiberoptic endoscopy to look for laryngeal tumors, as emphasized directly in the lecture. Antibiotics, PPIs, or reassurance risk delaying diagnosis of a potentially malignant cause.
+###
+A young male teacher presents with hoarseness of voice for 3 weeks with a history of prolonged vocal strain. Laryngoscopy reveals a smooth, unilateral lesion on the vocal cord. What is the most likely diagnosis?
+A) Laryngeal carcinoma
+B) Vocal cord paralysis
+C) Vocal cord polyp
+D) Vocal cord nodules
+E) Reflux laryngitis
+Correct Answer: C) Vocal cord polyp
+Explanation:
+A vocal cord polyp typically presents as a unilateral, smooth lesion following a single episode of vocal strain or trauma, unlike nodules which are bilateral and related to chronic voice abuse (e.g., singers/teachers using their voice repetitively).
