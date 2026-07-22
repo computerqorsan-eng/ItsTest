@@ -1003,37 +1003,162 @@ function ensureGroupOrder(groups, sectionType, subjectName){
       }
     }, 0);
   };
-
   prepareQuestionForExam = function(question){
     const clone = JSON.parse(JSON.stringify(question));
     const baseOptions = (clone.options || []).map(opt => stripOptionPrefix(opt));
     clone.originalOptions = baseOptions.slice();
     clone.options = baseOptions.slice();
-    clone.correctAnswerText = getCorrectAnswerText({ ...clone, options: baseOptions, originalOptions: baseOptions.slice() });
-    clone.correctAnswer = clone.correctAnswerText;
-    clone.correctIndex = resolveCorrectIndex(clone.options, clone.correctAnswerText);
+    if (clone.isMultiple) {
+      clone.correctAnswerText = clone.correctAnswer;
+    } else {
+      clone.correctAnswerText = getCorrectAnswerText({ ...clone, options: baseOptions, originalOptions: baseOptions.slice() });
+      clone.correctAnswer = clone.correctAnswerText;
+      clone.correctIndex = resolveCorrectIndex(clone.options, clone.correctAnswerText);
+    }
     return clone;
   };
 
+  window.isAnswerCorrect = function(q, ans) {
+    if (!q) return false;
+    if (q.isMultiple) {
+      if (!Array.isArray(ans) || !Array.isArray(q.correctIndices)) return false;
+      if (ans.length !== q.correctIndices.length) return false;
+      const sortedAns = [...ans].sort();
+      const sortedCorr = [...q.correctIndices].sort();
+      return sortedAns.every((val, index) => val === sortedCorr[index]);
+    }
+    return ans === q.correctIndex;
+  };
+
+  window.selectOption = function(index) {
+    if (!state.currentExam) return;
+    const idx = state.currentExam.currentIndex;
+    const q = state.currentExam.questions[idx];
+
+    if (state.currentExam.mode === 'training' && state.currentExam.showAnswer) return;
+
+    if (q.isMultiple) {
+      if (!Array.isArray(state.currentExam.answers[idx])) {
+        state.currentExam.answers[idx] = [];
+      }
+      const currentAns = state.currentExam.answers[idx];
+      const pos = currentAns.indexOf(index);
+      if (pos !== -1) {
+        currentAns.splice(pos, 1);
+      } else {
+        currentAns.push(index);
+      }
+      if (currentAns.length === 0) {
+        state.currentExam.answers[idx] = null;
+      }
+    } else {
+      state.currentExam.answers[idx] = index;
+    }
+    saveExamState();
+    renderExam();
+  };
+
+  window.submitMultipleAnswer = function() {
+    if (!state.currentExam) return;
+    const idx = state.currentExam.currentIndex;
+    const q = state.currentExam.questions[idx];
+    const ans = state.currentExam.answers[idx];
+
+    if (state.currentExam.firstAnswers[idx] === null) {
+      state.currentExam.firstAnswers[idx] = Array.isArray(ans) ? [...ans] : ans;
+    }
+
+    if (window.isAnswerCorrect(q, ans)) {
+      state.currentExam.showAnswer = true;
+    } else {
+      state.currentExam.showAnswer = false;
+      if (!state.wrongQuestions.includes(q.id)) {
+        state.wrongQuestions.push(q.id);
+        saveWrongQuestions();
+      }
+    }
+    saveExamState();
+    renderExam();
+  };
   /* keep exact answer rendering consistent */
   function cleanOptionDisplayLocal(text){ return String(text||'').replace(/\u200C+/g,''); }
   function getFormattedCurrentCorrectAnswerLocal(q){
+    if (q.isMultiple) {
+      if (!q.correctIndices || !q.correctIndices.length) return cleanOptionDisplayLocal(q.correctAnswerText || q.correctAnswer || '');
+      return q.correctIndices.map(idx => `${LETTERS[idx]}) ${cleanOptionDisplayLocal(q.options[idx])}`).join(' / ');
+    }
     const idx = getCorrectIndex(q);
     if(idx < 0) return cleanOptionDisplayLocal(getCorrectAnswerText(q) || q.correctAnswerText || q.correctAnswer || '');
     return `${LETTERS[idx]}) ${cleanOptionDisplayLocal(q.options[idx])}`;
   }
 
-  renderOptionButton = function(opt, i, idx, showAnswerState, selectedIndex, correctIdx){
-    let cls='option-btn';
-    if(selectedIndex===i) cls+=' selected';
-    if(showAnswerState){
-      if(i===correctIdx) cls+=' correct';
-      else if(selectedIndex===i && i!==correctIdx) cls+=' wrong';
+  function renderOptionButtonLocal(q, opt, i, showAnswerState, userAnswer){
+    if (q.isMultiple) {
+      let cls = 'option-btn multi-option-btn';
+      let isChecked = Array.isArray(userAnswer) && userAnswer.includes(i);
+      if (isChecked) cls += ' selected';
+      if (showAnswerState) {
+         if (q.correctIndices && q.correctIndices.includes(i)) cls += ' correct';
+         else if (isChecked && q.correctIndices && !q.correctIndices.includes(i)) cls += ' wrong';
+      }
+      return `<div class="${cls}" onclick="selectOption(${i})"><div class="checkbox-box ${isChecked ? 'checked' : ''}"></div><span class="option-label">${LETTERS[i]})</span><div class="option-text">${escapeHtml(cleanOptionDisplayLocal(opt))}</div></div>`;
+    } else {
+      let cls='option-btn';
+      if(userAnswer===i) cls+=' selected';
+      if(showAnswerState){
+        const correctIdx = getCorrectIndex(q);
+        if(i===correctIdx) cls+=' correct';
+        else if(userAnswer===i && i!==correctIdx) cls+=' wrong';
+      }
+      return `<button class="${cls}" onclick="selectOption(${i})"><span class="option-label">${LETTERS[i]})</span>${escapeHtml(cleanOptionDisplayLocal(opt))}</button>`;
     }
-    return `<button class="${cls}" onclick="selectOption(${i})"><span class="option-label">${LETTERS[i]})</span>${escapeHtml(cleanOptionDisplayLocal(opt))}</button>`;
+  }
+  window.toggleExamLecturesPopup = function(e) {
+    e.stopPropagation();
+    const popup = document.getElementById('exam-lectures-popup');
+    if (popup) {
+      popup.classList.toggle('show');
+    }
   };
 
-    renderExam = function(){
+  if (!window.examLecturesPopupListenersAdded) {
+    window.examLecturesPopupListenersAdded = true;
+    document.addEventListener('click', function(e) {
+      const popup = document.getElementById('exam-lectures-popup');
+      if (popup && popup.classList.contains('show')) {
+        if (!e.target.closest('.exam-help-icon') && !e.target.closest('.exam-lectures-popup')) {
+          popup.classList.remove('show');
+        }
+      }
+    });
+    document.addEventListener('touchstart', function(e) {
+      const popup = document.getElementById('exam-lectures-popup');
+      if (popup && popup.classList.contains('show')) {
+        if (!e.target.closest('.exam-help-icon') && !e.target.closest('.exam-lectures-popup')) {
+          popup.classList.remove('show');
+        }
+      }
+    });
+    window.addEventListener('scroll', function() {
+      const popup = document.getElementById('exam-lectures-popup');
+      if (popup && popup.classList.contains('show')) {
+        popup.classList.remove('show');
+      }
+    }, true);
+  }
+  function formatQuestionTextWithImage(text) {
+    if (!text) return { text: '', imageHtml: '' };
+    const match = text.match(/\[img:\s*([^\]]+)\]/i);
+    if (match) {
+      const imageName = match[1].trim();
+      const cleanText = text.replace(/\[img:\s*[^\]]+\]/gi, '').trim();
+      const imageHtml = `<div style="margin: 15px 0; text-align: center;"><img src="images/${encodeURIComponent(imageName)}" alt="Question Image" style="max-width: 100%; max-height: 300px; border-radius: 8px; border: 1px solid var(--border-color, #ccc);" onerror="this.style.display='none'"></div>`;
+      return { text: cleanText, imageHtml };
+    }
+    return { text, imageHtml: '' };
+  }
+
+  renderExam = function(){
     if(!state.currentExam) return;
     const questions = state.currentExam.questions;
     const idx = state.currentExam.currentIndex;
@@ -1045,7 +1170,7 @@ function ensureGroupOrder(groups, sectionType, subjectName){
 
     if(state.currentExam.mode === 'training'){
       const answered = state.currentExam.firstAnswers.filter(x => x !== null).length;
-      const correct = state.currentExam.firstAnswers.filter((ans, i) => ans !== null && isAnswerCorrect(questions[i], ans)).length;
+      const correct = state.currentExam.firstAnswers.filter((ans, i) => ans !== null && (window.isAnswerCorrect ? window.isAnswerCorrect(questions[i], ans) : false)).length;
       const pct = answered > 0 ? Math.round((correct / answered) * 100) : 0;
 
       if(progressEl){
@@ -1063,21 +1188,50 @@ function ensureGroupOrder(groups, sectionType, subjectName){
     }
 
     renderGrid();
-    const correctIdx = getCorrectIndex(q);
+
+    const gridEl = el('exam-grid');
+    if (gridEl) {
+      let titleContainer = el('exam-title-container');
+      if (!titleContainer) {
+        titleContainer = document.createElement('div');
+        titleContainer.id = 'exam-title-container';
+        gridEl.parentNode.insertBefore(titleContainer, gridEl);
+      }
+      
+      const subjects = [...new Set(questions.map(x => x.subjectName).filter(Boolean))];
+      const lectures = [...new Set(questions.map(x => x.lectureName).filter(Boolean))];
+      const subjectText = subjects.length > 0 ? subjects[0] : 'Exam';
+      
+      if (lectures.length <= 1) {
+        const lecText = lectures.length === 1 ? ` - ${lectures[0]}` : '';
+        titleContainer.innerHTML = `<span>${escapeHtml(subjectText)}${escapeHtml(lecText)}</span>`;
+      } else {
+        titleContainer.innerHTML = `
+          <span>${escapeHtml(subjectText)}</span>
+          <div class="exam-help-icon" onclick="toggleExamLecturesPopup(event)">?</div>
+          <div id="exam-lectures-popup" class="exam-lectures-popup">
+             ${lectures.map(l => escapeHtml(l)).join('<br>')}
+          </div>
+        `;
+      }
+    }
+
     const showAnswerState = state.currentExam.mode === 'training' ? getTrainingShowAnswerState(state.currentExam, idx) : false;
     const fav = state.favorites.includes(q.id);
     const favIcon = fav ? '💚' : '♡';
     const answerSummaryHtml = showAnswerState ? `<div class="answer-summary"><strong>Correct Answer:</strong> <span class="answer-value">${escapeHtml(getFormattedCurrentCorrectAnswerLocal(q))}</span></div>` : '';
 
+    const { text: cleanText, imageHtml } = formatQuestionTextWithImage(q.text);
+
     if(el('question-container')){
-      el('question-container').innerHTML = `<div class="question-header"><span class="question-number">Q${idx+1}</span><div class="question-actions"><button class="icon-btn favorite-heart-btn ${fav?'active':''}" data-question-id="${escapeAttribute(q.id)}" aria-pressed="${fav?'true':'false'}" title="${fav?'إزالة من المفضلة':'إضافة إلى المفضلة'}" onclick="toggleFavorite('${q.id}')">${favIcon}</button><button class="icon-btn" onclick="toggleQuestionLocation()">${theme().icons.location}</button></div></div><p class="question-text">${escapeHtml(q.text)}</p><div class="options-list">${q.options.map((opt,i)=>renderOptionButton(opt,i,idx,showAnswerState,state.currentExam.answers[idx],correctIdx)).join('')}</div>${answerSummaryHtml}<div class="explanation-box ${showAnswerState?'visible':''}"><strong>Explanation:</strong> ${escapeHtml(q.explanation||'No explanation available.')}</div>${typeof renderRemoveWrongBtn === 'function' ? renderRemoveWrongBtn() : ''}`;
+      el('question-container').innerHTML = `<div class="question-header"><span class="question-number">Q${idx+1}</span><div class="question-actions"><button class="icon-btn favorite-heart-btn ${fav?'active':''}" data-question-id="${escapeAttribute(q.id)}" aria-pressed="${fav?'true':'false'}" title="${fav?'إزالة من المفضلة':'إضافة إلى المفضلة'}" onclick="toggleFavorite('${q.id}')">${favIcon}</button><button class="icon-btn" onclick="toggleQuestionLocation()">${theme().icons.location}</button></div></div><p class="question-text">${escapeHtml(cleanText)}</p>${imageHtml}<div class="options-list">${q.options.map((opt,i)=>renderOptionButtonLocal(q, opt, i, showAnswerState, state.currentExam.answers[idx])).join('')}</div>${answerSummaryHtml}<div class="explanation-box ${showAnswerState?'visible':''}"><strong>Explanation:</strong> ${escapeHtml(q.explanation||'No explanation available.')}</div>${typeof renderRemoveWrongBtn === 'function' ? renderRemoveWrongBtn() : ''}`;
       el('question-container').classList.add('exam-content-ltr');
     }
 
     refreshFavoriteButtonsUI();
     renderExamNav();
   };
-  openReadonly = function(questionId){
+    openReadonly = function(questionId){
     const q = state.allQuestions.find(item => item.id === questionId);
     if(!q) return;
     const t = theme();
@@ -1085,12 +1239,22 @@ function ensureGroupOrder(groups, sectionType, subjectName){
     const fav = state.favorites.includes(q.id);
     const favIcon = fav ? '💚' : '♡';
 
+    const { text: cleanText, imageHtml } = formatQuestionTextWithImage(q.text);
+
     showScreen('readonly-screen');
-    el('readonly-content').innerHTML = `<div class="question-header"><span class="question-number">Question ${escapeHtml(q.number||'?')}</span><div class="question-actions"><button class="icon-btn favorite-heart-btn ${fav?'active':''}" data-question-id="${escapeAttribute(q.id)}" aria-pressed="${fav?'true':'false'}" title="${fav?'إزالة من المفضلة':'إضافة إلى المفضلة'}" onclick="toggleFavorite('${q.id}'); openReadonly('${q.id}')">${favIcon}</button><button class="icon-btn" onclick="showLocation('${escapeJsString(q.subjectName)}','${escapeJsString(q.lectureName)}','${escapeJsString(q.batchName||'')}','${escapeJsString(q.number||'')}','${escapeJsString(q.pageNumber||'')}')">${t.icons.location}</button></div></div><p class="question-text">${escapeHtml(q.text)}</p><div class="options-list">${q.options.map((opt,i)=>'<div class="option-btn '+(i===correctIdx?'correct':'')+'" style="cursor:default;"><span class="option-label">'+LETTERS[i]+')</span>'+escapeHtml(cleanOptionDisplayLocal(opt))+'</div>').join('')}</div><div class="answer-summary"><strong>Correct Answer:</strong> <span class="answer-value">${escapeHtml(getFormattedCurrentCorrectAnswerLocal(q))}</span></div><div class="explanation-box visible"><strong>Explanation:</strong> ${escapeHtml(q.explanation||'No explanation available.')}</div>`;
+    el('readonly-content').innerHTML = `<div class="question-header"><span class="question-number">Question ${escapeHtml(q.number||'?')}</span><div class="question-actions"><button class="icon-btn favorite-heart-btn ${fav?'active':''}" data-question-id="${escapeAttribute(q.id)}" aria-pressed="${fav?'true':'false'}" title="${fav?'إزالة من المفضلة':'إضافة إلى المفضلة'}" onclick="toggleFavorite('${q.id}'); openReadonly('${q.id}')">${favIcon}</button><button class="icon-btn" onclick="showLocation('${escapeJsString(q.subjectName)}','${escapeJsString(q.lectureName)}','${escapeJsString(q.batchName||'')}','${escapeJsString(q.number||'')}','${escapeJsString(q.pageNumber||'')}')">${t.icons.location}</button></div></div><p class="question-text">${escapeHtml(cleanText)}</p>${imageHtml}<div class="options-list">${q.options.map((opt,i)=>{
+      if (q.isMultiple) {
+         let isCorr = q.correctIndices && q.correctIndices.includes(i);
+         let cls = 'option-btn multi-option-btn' + (isCorr ? ' correct' : '');
+         return `<div class="${cls}" style="cursor:default;"><div class="checkbox-box ${isCorr ? 'checked' : ''}"></div><span class="option-label">${LETTERS[i]})</span><div class="option-text">${escapeHtml(cleanOptionDisplayLocal(opt))}</div></div>`;
+      } else {
+         return '<div class="option-btn '+(i===correctIdx?'correct':'')+'" style="cursor:default;"><span class="option-label">'+LETTERS[i]+')</span>'+escapeHtml(cleanOptionDisplayLocal(opt))+'</div>';
+      }
+    }).join('')}</div><div class="answer-summary"><strong>Correct Answer:</strong> <span class="answer-value">${escapeHtml(getFormattedCurrentCorrectAnswerLocal(q))}</span></div><div class="explanation-box visible"><strong>Explanation:</strong> ${escapeHtml(q.explanation||'No explanation available.')}</div>`;
     el('readonly-content').classList.add('readonly-ltr');
     refreshFavoriteButtonsUI();
   };
-  reviewExam = function(){
+    reviewExam = function(){
     if(!state.currentExam) return;
     const reviewDiv=el('results-review');
     reviewDiv.classList.remove('hidden');
@@ -1099,11 +1263,25 @@ function ensureGroupOrder(groups, sectionType, subjectName){
       const answersUsed = state.currentExam.mode==='exam' ? state.currentExam.answers : state.currentExam.firstAnswers;
       const userAnswer=answersUsed[idx];
       const correctIdx=getCorrectIndex(q);
-      const unanswered = userAnswer===null;
-      const ok=userAnswer===correctIdx;
+      const unanswered = userAnswer===null || (Array.isArray(userAnswer) && userAnswer.length === 0);
+      const ok = window.isAnswerCorrect ? window.isAnswerCorrect(q, userAnswer) : userAnswer===correctIdx;
       const statusColor = unanswered ? 'var(--text-muted)' : (ok?'var(--success)':'var(--danger)');
       const statusLabel = unanswered ? 'You didn\'t answer it' : (ok ? theme().icons.success+' Correct' : theme().icons.error+' Wrong');
-      html += `<div class="question-container review-question-card mt-10" style="border-inline-start:4px solid ${statusColor};"><div class="question-header"><span class="question-number">Q${idx+1}</span><span style="color:${statusColor};font-weight:900;">${statusLabel}</span></div><p class="question-text">${escapeHtml(q.text)}</p><div class="options-list">${q.options.map((opt,i)=>{ let cls='option-btn'; if(i===correctIdx) cls+=' correct'; if(i===userAnswer && i!==correctIdx) cls+=' wrong'; return '<div class="'+cls+'" style="cursor:default;"><span class="option-label">'+LETTERS[i]+')</span>'+escapeHtml(cleanOptionDisplayLocal(opt))+'</div>'; }).join('')}</div><div class="answer-summary"><strong>Correct Answer:</strong> <span class="answer-value">${escapeHtml(getFormattedCurrentCorrectAnswerLocal(q))}</span></div><div class="explanation-box visible"><strong>Explanation:</strong> ${escapeHtml(q.explanation||'No explanation available.')}</div></div>`;
+      
+      const { text: cleanText, imageHtml } = formatQuestionTextWithImage(q.text);
+
+      html += `<div class="question-container review-question-card mt-10" style="border-inline-start:4px solid ${statusColor};"><div class="question-header"><span class="question-number">Q${idx+1}</span><span style="color:${statusColor};font-weight:900;">${statusLabel}</span></div><p class="question-text">${escapeHtml(cleanText)}</p>${imageHtml}<div class="options-list">${q.options.map((opt,i)=>{
+        if (q.isMultiple) {
+          let isCorr = q.correctIndices && q.correctIndices.includes(i);
+          let isChecked = Array.isArray(userAnswer) && userAnswer.includes(i);
+          let cls = 'option-btn multi-option-btn';
+          if (isCorr) cls += ' correct';
+          else if (isChecked && !isCorr) cls += ' wrong';
+          return `<div class="${cls}" style="cursor:default;"><div class="checkbox-box ${isChecked ? 'checked' : ''}"></div><span class="option-label">${LETTERS[i]})</span><div class="option-text">${escapeHtml(cleanOptionDisplayLocal(opt))}</div></div>`;
+        } else {
+          let cls='option-btn'; if(i===correctIdx) cls+=' correct'; if(i===userAnswer && i!==correctIdx) cls+=' wrong'; return '<div class="'+cls+'" style="cursor:default;"><span class="option-label">'+LETTERS[i]+')</span>'+escapeHtml(cleanOptionDisplayLocal(opt))+'</div>';
+        }
+      }).join('')}</div><div class="answer-summary"><strong>Correct Answer:</strong> <span class="answer-value">${escapeHtml(getFormattedCurrentCorrectAnswerLocal(q))}</span></div><div class="explanation-box visible"><strong>Explanation:</strong> ${escapeHtml(q.explanation||'No explanation available.')}</div></div>`;
     });
     reviewDiv.innerHTML=html;
   };
@@ -1112,6 +1290,7 @@ function ensureGroupOrder(groups, sectionType, subjectName){
     const nav = el('exam-nav');
     const idx = state.currentExam.currentIndex;
     const last = state.currentExam.questions.length - 1;
+    const q = state.currentExam.questions[idx];
     let prevBtn = '<span></span>';
     let nextBtn = '<span></span>';
 
@@ -1127,18 +1306,39 @@ function ensureGroupOrder(groups, sectionType, subjectName){
         nextBtn = idx < last
           ? '<button class="btn-primary" onclick="nextQuestion()">Next →</button>'
           : '<button class="btn-primary" onclick="finishExam()">Finish</button>';
-      } else if(state.currentExam.answers[idx] !== null){
-        nextBtn = '<button class="btn-small" onclick="showAnswer()">Show Answer</button>';
+      } else {
+        if (q.isMultiple) {
+          const ans = state.currentExam.answers[idx];
+          const hasSelection = Array.isArray(ans) && ans.length > 0;
+          let btns = '';
+          if (hasSelection) {
+            btns += `<button class="btn-primary btn-submit" onclick="submitMultipleAnswer()">Submit</button>`;
+          }
+          if (state.currentExam.firstAnswers[idx] !== null) {
+            btns += `<button class="btn-small ml-10" onclick="showAnswer()">Show Answer</button>`;
+          }
+          nextBtn = `<div style="display:flex; gap:10px; align-items:center;">${btns}</div>`;
+        } else if(state.currentExam.answers[idx] !== null){
+          nextBtn = '<button class="btn-small" onclick="showAnswer()">Show Answer</button>';
+        }
       }
-    } else if(state.currentExam.answers[idx] !== null){
-      nextBtn = idx < last
-        ? '<button class="btn-primary" onclick="nextQuestion()">Next →</button>'
-        : '<button class="btn-primary" onclick="finishExam()">Finish</button>';
+    } else {
+      if (q.isMultiple) {
+        const ans = state.currentExam.answers[idx];
+        if (Array.isArray(ans) && ans.length > 0) {
+          nextBtn = idx < last
+            ? '<button class="btn-primary" onclick="nextQuestion()">Next →</button>'
+            : '<button class="btn-primary" onclick="finishExam()">Finish</button>';
+        }
+      } else if(state.currentExam.answers[idx] !== null){
+        nextBtn = idx < last
+          ? '<button class="btn-primary" onclick="nextQuestion()">Next →</button>'
+          : '<button class="btn-primary" onclick="finishExam()">Finish</button>';
+      }
     }
 
     nav.innerHTML = prevBtn + nextBtn;
   };
-
   nextQuestion = function(){
     if(!state.currentExam) return;
     if(state.currentExam.currentIndex < state.currentExam.questions.length - 1){
@@ -1179,13 +1379,13 @@ function ensureGroupOrder(groups, sectionType, subjectName){
     scrollQuestionIntoView(true);
   };
 
-  showAnswer = function(){
+    showAnswer = function(){
     if(!state.currentExam) return;
     state.currentExam.showAnswer = true;
     const idx = state.currentExam.currentIndex;
     const q = state.currentExam.questions[idx];
     const ans = state.currentExam.firstAnswers[idx];
-    if(ans !== null && !isAnswerCorrect(q, ans) && !state.wrongQuestions.includes(q.id)){
+    if(ans !== null && !window.isAnswerCorrect(q, ans) && !state.wrongQuestions.includes(q.id)){
       state.wrongQuestions.push(q.id);
       saveWrongQuestions();
     }
@@ -1351,11 +1551,11 @@ function ensureGroupOrder(groups, sectionType, subjectName){
     }, 250);
   };
 
-  function isTrainingQuestionSolved(exam, index){
+    function isTrainingQuestionSolved(exam, index){
     if(!exam || exam.mode !== 'training') return false;
     const q = exam.questions[index];
     const answer = exam.answers[index];
-    return answer !== null && typeof q !== 'undefined' && isAnswerCorrect(q, answer);
+    return answer !== null && typeof q !== 'undefined' && window.isAnswerCorrect(q, answer);
   }
 
   function getTrainingShowAnswerState(exam, index){
