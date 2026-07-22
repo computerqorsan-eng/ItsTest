@@ -1,16 +1,5 @@
 [
   {
-    "id": "audio",
-    "name": "Audio",
-    "lectures": [],
-    "ai": [],
-    "years": [],
-    "allQuestions": [],
-    "totalQuestions": 0,
-    "totalLectures": 0,
-    "hasAiFolder": false
-  },
-  {
     "id": "introduction",
     "name": "Introduction",
     "lectures": [
@@ -332,9 +321,9 @@
             "sourceType": "lecture"
           },
           {
-            "id": "introduction__lecture__ophthalmology__4__v0jw9f",
+            "id": "introduction__lecture__ophthalmology__4__a3z0nr",
             "number": "4",
-            "text": "All are causes of this sign except (The image shows: A red eye) ?",
+            "text": "All are causes of this sign except (The image shows: A red eye) ? [img: redeye.jpg]",
             "options": [
               "Allergic conjunctivitis",
               "Subconjunctival hemorrhage",
@@ -804,9 +793,9 @@
         "sourceType": "lecture"
       },
       {
-        "id": "introduction__lecture__ophthalmology__4__v0jw9f",
+        "id": "introduction__lecture__ophthalmology__4__a3z0nr",
         "number": "4",
-        "text": "All are causes of this sign except (The image shows: A red eye) ?",
+        "text": "All are causes of this sign except (The image shows: A red eye) ? [img: redeye.jpg]",
         "options": [
           "Allergic conjunctivitis",
           "Subconjunctival hemorrhage",
@@ -971,6 +960,17 @@
     ],
     "totalQuestions": 14,
     "totalLectures": 2,
+    "hasAiFolder": false
+  },
+  {
+    "id": "images",
+    "name": "images",
+    "lectures": [],
+    "ai": [],
+    "years": [],
+    "allQuestions": [],
+    "totalQuestions": 0,
+    "totalLectures": 0,
     "hasAiFolder": false
   }
 ]
