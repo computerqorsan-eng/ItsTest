@@ -88,6 +88,14 @@ function parseQuestionFile(raw, meta) {
   for (let blockIndex = 0; blockIndex < blocks.length; blockIndex++) {
     const lines = blocks[blockIndex].split('\n').map(l => l.trim()).filter(Boolean);
     if (!lines.length || !lines.some(l => /^Correct\s*Answer\s*:/i.test(l))) continue;
+    
+    let isMultiple = false;
+    const multiIdx = lines.findIndex(l => l === '~Choose the correct answers~');
+    if (multiIdx !== -1) {
+      isMultiple = true;
+      lines.splice(multiIdx, 1);
+    }
+    
     let questionNumber = '';
     let questionText = '';
     let options = [];
@@ -111,10 +119,47 @@ function parseQuestionFile(raw, meta) {
     questionText = before.slice(0, firstOpt).join(' ').trim() || ('Question ' + fallback);
     options = before.slice(firstOpt).filter(l => /^[A-E][\)\.\-]\s*/i.test(l)).map(stripOptionPrefix);
     correctAnswer = lines[ansIdx].replace(/^Correct\s*Answer\s*:\s*/i, '').trim();
-    // استخراج حرف الإجابة الصحيحة (A-E)
-    const letterMatch = correctAnswer.match(/^([A-E])\s*[\)\.\-]\s*/i);
-    if(letterMatch) correctAnswerLetter = letterMatch[1].toUpperCase();
-    else correctAnswerLetter = '';
+    
+    let correctIndex = -1;
+    let correctAnswerText = '';
+    let correctIndices = [];
+    
+    if (isMultiple) {
+      const parts = correctAnswer.split('/').map(p => p.trim()).filter(Boolean);
+      parts.forEach(part => {
+        const m = part.match(/^([A-E])/i);
+        if (m) {
+          const idx = m[1].toUpperCase().charCodeAt(0) - 65;
+          if (idx >= 0 && idx < options.length) correctIndices.push(idx);
+        }
+      });
+      correctAnswerText = correctAnswer;
+    } else {
+      const letterMatch = correctAnswer.match(/^([A-E])\s*[\)\.\-]\s*/i);
+      if(letterMatch) correctAnswerLetter = letterMatch[1].toUpperCase();
+      if(correctAnswerLetter){
+        const letterIndex = correctAnswerLetter.charCodeAt(0) - 65;
+        if(letterIndex >= 0 && letterIndex < options.length){
+          correctIndex = letterIndex;
+          correctAnswerText = options[letterIndex];
+        }
+      }
+      if(correctIndex === -1){
+        const possibleIndex = resolveCorrectIndex(options, correctAnswer);
+        if(possibleIndex >= 0 && options[possibleIndex]){
+          correctIndex = possibleIndex;
+          correctAnswerText = options[possibleIndex];
+        } else {
+          correctAnswerText = stripOptionPrefix(correctAnswer);
+          const fallbackIndex = resolveCorrectIndex(options, correctAnswerText);
+          if(fallbackIndex >= 0 && options[fallbackIndex]){
+            correctIndex = fallbackIndex;
+            correctAnswerText = options[fallbackIndex];
+          }
+        }
+      }
+    }
+    
     let i = ansIdx + 1;
     if (i < lines.length && /^Explanation\s*:/i.test(lines[i])) {
       const exp = [];
@@ -136,31 +181,7 @@ function parseQuestionFile(raw, meta) {
       i++;
     }
     if (!questionNumber) questionNumber = String(fallback);
-    // تحديد الإجابة الصحيحة باستخدام الحرف أولاً
-    let correctIndex = -1;
-    let correctAnswerText = '';
-    if(correctAnswerLetter){
-      const letterIndex = correctAnswerLetter.charCodeAt(0) - 65;
-      if(letterIndex >= 0 && letterIndex < options.length){
-        correctIndex = letterIndex;
-        correctAnswerText = options[letterIndex];
-      }
-    }
-    if(correctIndex === -1){
-      // فشل في استخدام الحرف، نستخدم الطريقة النصية القديمة
-      const possibleIndex = resolveCorrectIndex(options, correctAnswer);
-      if(possibleIndex >= 0 && options[possibleIndex]){
-        correctIndex = possibleIndex;
-        correctAnswerText = options[possibleIndex];
-      } else {
-        correctAnswerText = stripOptionPrefix(correctAnswer);
-        const fallbackIndex = resolveCorrectIndex(options, correctAnswerText);
-        if(fallbackIndex >= 0 && options[fallbackIndex]){
-          correctIndex = fallbackIndex;
-          correctAnswerText = options[fallbackIndex];
-        }
-      }
-    }
+    
     const id = [slugify(meta.subjectName), slugify(meta.sourceType), slugify(meta.lectureName), slugify(questionNumber), hashString(questionText).slice(0, 10)].join('__');
     questions.push({
       id,
@@ -171,6 +192,8 @@ function parseQuestionFile(raw, meta) {
       correctAnswer,
       correctAnswerText,
       correctIndex,
+      correctIndices,
+      isMultiple,
       correctAnswerLetter,
       explanation,
       batchName,
