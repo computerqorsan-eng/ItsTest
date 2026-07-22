@@ -28,7 +28,7 @@ Correct Answer: B) Acute angle-closure glaucoma
 Explanation:
 Only angle-closure glaucoma is both acute and painful. A and E are acute but painless, while C and D are painless and gradual, not acute.
 ###
-All are causes of this sign except (The image shows: A red eye) ?
+All are causes of this sign except (The image shows: A red eye) ? [img: redeye.jpg]
 A) Allergic conjunctivitis
 B) Subconjunctival hemorrhage
 C) Bacterial keratitis
