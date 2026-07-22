@@ -18,7 +18,7 @@ Correct Answer: A) Right conductive hearing loss
 Explanation:
 A negative Rinne test (bone conduction > air conduction) on the right ear indicates a conductive problem in that ear, and Weber lateralizing to the same (right) ear confirms this, since sound lateralizes toward the affected ear in conductive hearing loss. In sensorineural loss, Rinne would remain positive (air > bone) and Weber would lateralize to the opposite, better-hearing ear.
 ###
-What tuning fork frequency is used for hearing tests?
+What tuning fork frequency is used for hearing tests? [img: RSA.png]
 A) 128 Hz
 B) 256 Hz
 C) 1024 Hz
