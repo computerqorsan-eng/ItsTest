@@ -1189,7 +1189,7 @@ function ensureGroupOrder(groups, sectionType, subjectName){
 
     renderGrid();
 
-        const gridEl = el('exam-grid');
+            const gridEl = el('question-grid');
     if (gridEl) {
       let titleContainer = el('exam-title-container');
       if (!titleContainer) {
@@ -1300,24 +1300,70 @@ function ensureGroupOrder(groups, sectionType, subjectName){
     });
     reviewDiv.innerHTML=html;
   };
-    const _origFinishExam = window.finishExam;
+      const _origFinishExam = window.finishExam;
   window.finishExam = function() {
     if (!state.currentExam) return _origFinishExam ? _origFinishExam() : null;
     
-    if (state.currentExam.mode === 'exam' && state.currentExam.direction === 'twoway') {
+    if (state.currentExam.direction === 'twoway') {
       const unansweredCount = state.currentExam.answers.filter(a => a === null || (Array.isArray(a) && a.length === 0)).length;
       if (unansweredCount > 0) {
         showDialog({
           title: 'تأكيد التسليم',
           message: `<div style="font-size: 15px; margin-bottom: 10px;">هناك ${unansweredCount} سؤال لم تحلهم، هل تريد تأكيد تسليم الاختبار دون حلهم؟</div>`,
           showCancel: true,
-          confirmText: 'نعم',
-          cancelText: 'لا، العودة للامتحان',
-          onConfirm: () => {
-             if (_origFinishExam) _origFinishExam();
-          },
+          confirmText: 'dummy',
+          cancelText: 'dummy',
+          onConfirm: () => {},
           onCancel: () => {}
         });
+
+        setTimeout(() => {
+          const actions = document.querySelector('#dialog-overlay .dialog-actions');
+          if (!actions) return;
+          
+          while (actions.firstChild) {
+            actions.removeChild(actions.firstChild);
+          }
+
+          const yesBtn = document.createElement('button');
+          yesBtn.className = 'btn-primary';
+          yesBtn.textContent = 'نعم';
+          yesBtn.onclick = () => {
+            hideDialog();
+            if (_origFinishExam) {
+                _origFinishExam();
+            } else {
+                state.currentExam.endTime = new Date().getTime();
+                if (typeof saveExamState === 'function') saveExamState();
+                if (typeof showScreen === 'function') showScreen('results-screen');
+                if (typeof renderResults === 'function') renderResults();
+            }
+          };
+          actions.appendChild(yesBtn);
+
+          const noBtn = document.createElement('button');
+          noBtn.className = 'btn-secondary';
+          noBtn.textContent = 'لا، العودة للامتحان';
+          noBtn.onclick = () => {
+            hideDialog();
+          };
+          actions.appendChild(noBtn);
+
+        }, 0);
+        
+        return;
+      }
+    }
+
+    if (_origFinishExam) {
+        _origFinishExam();
+    } else {
+        state.currentExam.endTime = new Date().getTime();
+        if (typeof saveExamState === 'function') saveExamState();
+        if (typeof showScreen === 'function') showScreen('results-screen');
+        if (typeof renderResults === 'function') renderResults();
+    }
+  };
 
         setTimeout(() => {
           const actions = document.querySelector('#dialog-overlay .dialog-actions');
