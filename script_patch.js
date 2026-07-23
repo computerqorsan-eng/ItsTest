@@ -1146,18 +1146,18 @@ function ensureGroupOrder(groups, sectionType, subjectName){
       }
     }, true);
   }
-  function formatQuestionTextWithImage(text) {
+    function formatQuestionTextWithImage(text) {
     if (!text) return { text: '', imageHtml: '' };
     const match = text.match(/\[img:\s*([^\]]+)\]/i);
     if (match) {
       const imageName = match[1].trim();
       const cleanText = text.replace(/\[img:\s*[^\]]+\]/gi, '').trim();
-      const imageHtml = `<div style="margin: 15px 0; text-align: center;"><img src="images/${encodeURIComponent(imageName)}" alt="Question Image" style="max-width: 100%; max-height: 300px; border-radius: 8px; border: 1px solid var(--border-color, #ccc);" onerror="this.style.display='none'"></div>`;
+      const encodedName = encodeURIComponent(imageName);
+      const imageHtml = `<div style="margin: 15px 0; text-align: center;"><img src="images/${encodedName}" alt="Question Image" style="max-width: 100%; max-height: 300px; border-radius: 8px; border: 1px solid var(--border-color, #ccc);" onerror="if(!this.dataset.retried){ this.dataset.retried = true; this.src = this.src.match(/\\.png$/i) ? this.src.replace(/\\.png$/i, '.jpg') : this.src.replace(/\\.(jpg|jpeg)$/i, '.png'); } else { this.style.display='none'; }"></div>`;
       return { text: cleanText, imageHtml };
     }
     return { text, imageHtml: '' };
   }
-
   renderExam = function(){
     if(!state.currentExam) return;
     const questions = state.currentExam.questions;
@@ -1189,7 +1189,7 @@ function ensureGroupOrder(groups, sectionType, subjectName){
 
     renderGrid();
 
-    const gridEl = el('exam-grid');
+        const gridEl = el('question-grid');
     if (gridEl) {
       let titleContainer = el('exam-title-container');
       if (!titleContainer) {
@@ -1202,18 +1202,13 @@ function ensureGroupOrder(groups, sectionType, subjectName){
       const lectures = [...new Set(questions.map(x => x.lectureName).filter(Boolean))];
       const subjectText = subjects.length > 0 ? subjects[0] : 'Exam';
       
-      if (lectures.length <= 1) {
-        const lecText = lectures.length === 1 ? ` - ${lectures[0]}` : '';
-        titleContainer.innerHTML = `<span>${escapeHtml(subjectText)}${escapeHtml(lecText)}</span>`;
-      } else {
-        titleContainer.innerHTML = `
-          <span>${escapeHtml(subjectText)}</span>
-          <div class="exam-help-icon" onclick="toggleExamLecturesPopup(event)">?</div>
-          <div id="exam-lectures-popup" class="exam-lectures-popup">
-             ${lectures.map(l => escapeHtml(l)).join('<br>')}
-          </div>
-        `;
-      }
+      titleContainer.innerHTML = `
+        <span>${escapeHtml(subjectText)}</span>
+        <div class="exam-help-icon" onclick="toggleExamLecturesPopup(event)">?</div>
+        <div id="exam-lectures-popup" class="exam-lectures-popup">
+           ${lectures.map(l => escapeHtml(l)).join('<br>')}
+        </div>
+      `;
     }
 
     const showAnswerState = state.currentExam.mode === 'training' ? getTrainingShowAnswerState(state.currentExam, idx) : false;
@@ -1230,6 +1225,66 @@ function ensureGroupOrder(groups, sectionType, subjectName){
 
     refreshFavoriteButtonsUI();
     renderExamNav();
+  };
+    window.finishExam = function() {
+    if(!state.currentExam) return;
+    state.currentExam.endTime = new Date().getTime();
+    
+    let correct = 0;
+    let wrong = 0;
+    let unanswered = 0;
+    const total = state.currentExam.questions.length;
+    
+    const answersUsed = state.currentExam.mode === 'exam' ? state.currentExam.answers : state.currentExam.firstAnswers;
+    
+    state.currentExam.questions.forEach((q, i) => {
+      const ans = answersUsed[i];
+      const isUnanswered = ans === null || (Array.isArray(ans) && ans.length === 0);
+      
+      if (isUnanswered) {
+        unanswered++;
+      } else {
+        const ok = window.isAnswerCorrect ? window.isAnswerCorrect(q, ans) : (ans === (typeof getCorrectIndex === 'function' ? getCorrectIndex(q) : q.correctIndex));
+        if (ok) correct++;
+        else wrong++;
+      }
+    });
+    
+    const scorePct = total > 0 ? Math.round((correct / total) * 100) : 0;
+    
+    if (el('exam-timer')) el('exam-timer').classList.add('hidden');
+    showScreen('results-screen');
+    
+    if (el('results-title')) el('results-title').textContent = (typeof theme === 'function' && theme().texts.resultsTitle) || 'Results';
+    
+    const resultsContent = el('results-content');
+    if (resultsContent) {
+      resultsContent.innerHTML = `
+        <div class="results-summary">
+          <div class="result-circle">
+            <svg viewBox="0 0 36 36" class="circular-chart ${scorePct >= 50 ? 'green' : 'red'}">
+              <path class="circle-bg" d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831" />
+              <path class="circle" stroke-dasharray="${scorePct}, 100" d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831" />
+              <text x="18" y="20.35" class="percentage">${scorePct}%</text>
+            </svg>
+          </div>
+          <div class="results-stats-grid">
+             <div class="stat-box" style="color:var(--success)"><span>✅ صحيح</span><strong>${correct}</strong></div>
+             <div class="stat-box" style="color:var(--danger)"><span>❌ خطأ</span><strong>${wrong}</strong></div>
+             <div class="stat-box" style="color:var(--text-muted)"><span>⚪ غير مجاب</span><strong>${unanswered}</strong></div>
+          </div>
+        </div>
+      `;
+    }
+    
+    if (typeof reviewExam === 'function') reviewExam();
+    if (typeof saveMemoriesHistory === 'function') saveMemoriesHistory();
+    if (typeof saveProgress === 'function') saveProgress();
+    if (typeof saveWrongQuestions === 'function') saveWrongQuestions();
+    if (typeof saveExamState === 'function') saveExamState();
+    if (typeof stopBackgroundSound === 'function') stopBackgroundSound();
+    if (typeof playCelebrateSound === 'function' && scorePct >= 50) playCelebrateSound();
+    if (typeof startFireworks === 'function' && scorePct >= 50) startFireworks();
   };
     openReadonly = function(questionId){
     const q = state.allQuestions.find(item => item.id === questionId);
