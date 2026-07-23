@@ -1226,66 +1226,6 @@ function ensureGroupOrder(groups, sectionType, subjectName){
     refreshFavoriteButtonsUI();
     renderExamNav();
   };
-    window.finishExam = function() {
-    if(!state.currentExam) return;
-    state.currentExam.endTime = new Date().getTime();
-    
-    let correct = 0;
-    let wrong = 0;
-    let unanswered = 0;
-    const total = state.currentExam.questions.length;
-    
-    const answersUsed = state.currentExam.mode === 'exam' ? state.currentExam.answers : state.currentExam.firstAnswers;
-    
-    state.currentExam.questions.forEach((q, i) => {
-      const ans = answersUsed[i];
-      const isUnanswered = ans === null || (Array.isArray(ans) && ans.length === 0);
-      
-      if (isUnanswered) {
-        unanswered++;
-      } else {
-        const ok = window.isAnswerCorrect ? window.isAnswerCorrect(q, ans) : (ans === (typeof getCorrectIndex === 'function' ? getCorrectIndex(q) : q.correctIndex));
-        if (ok) correct++;
-        else wrong++;
-      }
-    });
-    
-    const scorePct = total > 0 ? Math.round((correct / total) * 100) : 0;
-    
-    if (el('exam-timer')) el('exam-timer').classList.add('hidden');
-    showScreen('results-screen');
-    
-    if (el('results-title')) el('results-title').textContent = (typeof theme === 'function' && theme().texts.resultsTitle) || 'Results';
-    
-    const resultsContent = el('results-content');
-    if (resultsContent) {
-      resultsContent.innerHTML = `
-        <div class="results-summary">
-          <div class="result-circle">
-            <svg viewBox="0 0 36 36" class="circular-chart ${scorePct >= 50 ? 'green' : 'red'}">
-              <path class="circle-bg" d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831" />
-              <path class="circle" stroke-dasharray="${scorePct}, 100" d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831" />
-              <text x="18" y="20.35" class="percentage">${scorePct}%</text>
-            </svg>
-          </div>
-          <div class="results-stats-grid">
-             <div class="stat-box" style="color:var(--success)"><span>✅ صحيح</span><strong>${correct}</strong></div>
-             <div class="stat-box" style="color:var(--danger)"><span>❌ خطأ</span><strong>${wrong}</strong></div>
-             <div class="stat-box" style="color:var(--text-muted)"><span>⚪ غير مجاب</span><strong>${unanswered}</strong></div>
-          </div>
-        </div>
-      `;
-    }
-    
-    if (typeof reviewExam === 'function') reviewExam();
-    if (typeof saveMemoriesHistory === 'function') saveMemoriesHistory();
-    if (typeof saveProgress === 'function') saveProgress();
-    if (typeof saveWrongQuestions === 'function') saveWrongQuestions();
-    if (typeof saveExamState === 'function') saveExamState();
-    if (typeof stopBackgroundSound === 'function') stopBackgroundSound();
-    if (typeof playCelebrateSound === 'function' && scorePct >= 50) playCelebrateSound();
-    if (typeof startFireworks === 'function' && scorePct >= 50) startFireworks();
-  };
     openReadonly = function(questionId){
     const q = state.allQuestions.find(item => item.id === questionId);
     if(!q) return;
