@@ -1281,91 +1281,71 @@ function ensureGroupOrder(groups, sectionType, subjectName){
     refreshFavoriteButtonsUI();
     renderExamNav();
   };
-      window.finishExam = function() {
-  if (!state.currentExam) return;
-  state.currentExam.endTime = new Date().getTime();
-  
-  let correct = 0;
-  let wrong = 0;
-  let unanswered = 0;
-  
-  const questions = state.currentExam.questions || [];
-  const total = questions.length;
-  const answers = state.currentExam.answers || [];
-  const firstAnswers = state.currentExam.firstAnswers || [];
-  const mode = state.currentExam.mode;
-
-  questions.forEach((q, i) => {
-    let ans = null;
-    if (mode === 'exam') {
-      ans = answers[i];
-    } else {
-      // في وضع التدريب، يتم اعتماد الإجابة الأولى إن وجدت، وإلا يتم الاعتماد على الإجابة الحالية
-      const first = firstAnswers[i];
-      ans = (first !== null && first !== undefined) ? first : answers[i];
-    }
-
-    // التأكد الدقيق مما إذا كان السؤال غير مجاب (null, undefined, أو مصفوفة فارغة)
-    const isUnanswered = ans === null || ans === undefined || (Array.isArray(ans) && ans.length === 0);
-
-    if (isUnanswered) {
-      unanswered++;
-    } else {
-      let ok = false;
-      if (typeof window.isAnswerCorrect === 'function') {
-        ok = window.isAnswerCorrect(q, ans);
-      } else if (typeof getCorrectIndex === 'function') {
-        ok = (ans === getCorrectIndex(q));
+          window.finishExam = function() {
+    if(!state.currentExam) return;
+    state.currentExam.endTime = new Date().getTime();
+    
+    let correct = 0;
+    let wrong = 0;
+    let unanswered = 0;
+    const total = state.currentExam.questions.length;
+    
+    state.currentExam.questions.forEach((q, i) => {
+      let ans = null;
+      if (state.currentExam.mode === 'exam') {
+        ans = state.currentExam.answers[i];
       } else {
-        // فحص احتراطي في حال كانت الإجابات متعددة الخيارات (Arrays)
-        if (Array.isArray(q.correctIndex) && Array.isArray(ans)) {
-          ok = ans.length === q.correctIndex.length && ans.every(val => q.correctIndex.includes(val));
-        } else {
-          ok = (ans === q.correctIndex);
-        }
+        const first = state.currentExam.firstAnswers[i];
+        ans = (first !== null && first !== undefined) ? first : state.currentExam.answers[i];
       }
 
-      if (ok) correct++;
-      else wrong++;
+      const isUnanswered = ans === null || ans === undefined || (Array.isArray(ans) && ans.length === 0);
+      
+      if (isUnanswered) {
+        unanswered++;
+      } else {
+        const ok = window.isAnswerCorrect ? window.isAnswerCorrect(q, ans) : (ans === (typeof getCorrectIndex === 'function' ? getCorrectIndex(q) : q.correctIndex));
+        if (ok) correct++;
+        else wrong++;
+      }
+    });
+    
+    const scorePct = total > 0 ? Math.round((correct / total) * 100) : 0;
+    
+    if (el('exam-timer')) el('exam-timer').classList.add('hidden');
+    showScreen('results-screen');
+    
+    if (el('results-title')) el('results-title').textContent = (typeof theme === 'function' && theme().texts.resultsTitle) || 'Results';
+    
+    const resultsContent = el('results-content');
+    if (resultsContent) {
+      resultsContent.innerHTML = `
+        <div class="results-summary">
+          <div class="result-circle">
+            <svg viewBox="0 0 36 36" class="circular-chart ${scorePct >= 50 ? 'green' : 'red'}">
+              <path class="circle-bg" d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831" />
+              <path class="circle" stroke-dasharray="${scorePct}, 100" d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831" />
+              <text x="18" y="20.35" class="percentage">${scorePct}%</text>
+            </svg>
+          </div>
+          <div class="results-stats-grid">
+             <div class="stat-box" style="color:var(--success)"><span>✅ صحيح</span><strong>${correct}</strong></div>
+             <div class="stat-box" style="color:var(--danger)"><span>❌ خطأ</span><strong>${wrong}</strong></div>
+             <div class="stat-box" style="color:var(--text-muted)"><span>⚪ غير مجاب</span><strong>${unanswered}</strong></div>
+          </div>
+        </div>
+      `;
     }
-  });
-
-  const scorePct = total > 0 ? Math.round((correct / total) * 100) : 0;
-
-  if (el('exam-timer')) el('exam-timer').classList.add('hidden');
-  showScreen('results-screen');
-
-  if (el('results-title')) el('results-title').textContent = (typeof theme === 'function' && theme().texts.resultsTitle) || 'Results';
-
-  const resultsContent = el('results-content');
-  if (resultsContent) {
-    resultsContent.innerHTML = `
-      <div class="results-summary">
-        <div class="result-circle">
-          <svg viewBox="0 0 36 36" class="circular-chart ${scorePct >= 50 ? 'green' : 'red'}">
-            <path class="circle-bg" d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831" />
-            <path class="circle" stroke-dasharray="${scorePct}, 100" d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831" />
-            <text x="18" y="20.35" class="percentage">${scorePct}%</text>
-          </svg>
-        </div>
-        <div class="results-stats-grid">
-           <div class="stat-box" style="color:var(--success)"><span>✅ صحيح</span><strong>${correct}</strong></div>
-           <div class="stat-box" style="color:var(--danger)"><span>❌ خطأ</span><strong>${wrong}</strong></div>
-           <div class="stat-box" style="color:var(--text-muted)"><span>⚪ غير مجاب</span><strong>${unanswered}</strong></div>
-        </div>
-      </div>
-    `;
-  }
-
-  if (typeof reviewExam === 'function') reviewExam();
-  if (typeof saveMemoriesHistory === 'function') saveMemoriesHistory();
-  if (typeof saveProgress === 'function') saveProgress();
-  if (typeof saveWrongQuestions === 'function') saveWrongQuestions();
-  if (typeof saveExamState === 'function') saveExamState();
-  if (typeof stopBackgroundSound === 'function') stopBackgroundSound();
-  if (typeof playCelebrateSound === 'color' && scorePct >= 50) playCelebrateSound();
-  if (typeof startFireworks === 'function' && scorePct >= 50) startFireworks();
-};
+    
+    if (typeof reviewExam === 'function') reviewExam();
+    if (typeof saveMemoriesHistory === 'function') saveMemoriesHistory();
+    if (typeof saveProgress === 'function') saveProgress();
+    if (typeof saveWrongQuestions === 'function') saveWrongQuestions();
+    if (typeof saveExamState === 'function') saveExamState();
+    if (typeof stopBackgroundSound === 'function') stopBackgroundSound();
+    if (typeof playCelebrateSound === 'function' && scorePct >= 50) playCelebrateSound();
+    if (typeof startFireworks === 'function' && scorePct >= 50) startFireworks();
+  };
     openReadonly = function(questionId){
     const q = state.allQuestions.find(item => item.id === questionId);
     if(!q) return;
