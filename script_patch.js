@@ -1189,7 +1189,7 @@ function ensureGroupOrder(groups, sectionType, subjectName){
 
     renderGrid();
 
-    const gridEl = el('exam-grid');
+        const gridEl = el('exam-grid');
     if (gridEl) {
       let titleContainer = el('exam-title-container');
       if (!titleContainer) {
@@ -1199,20 +1199,35 @@ function ensureGroupOrder(groups, sectionType, subjectName){
       }
       
       const subjects = [...new Set(questions.map(x => x.subjectName).filter(Boolean))];
-      const lectures = [...new Set(questions.map(x => x.lectureName).filter(Boolean))];
       const subjectText = subjects.length > 0 ? subjects[0] : 'Exam';
       
-      if (lectures.length <= 1) {
-        const lecText = lectures.length === 1 ? ` - ${lectures[0]}` : '';
-        titleContainer.innerHTML = `<span>${escapeHtml(subjectText)}${escapeHtml(lecText)}</span>`;
+      const lectureCounts = {};
+      questions.forEach(q => {
+         if (q.lectureName) {
+             lectureCounts[q.lectureName] = (lectureCounts[q.lectureName] || 0) + 1;
+         }
+      });
+      const lectureKeys = Object.keys(lectureCounts);
+      
+      let popupContent = '';
+      if (lectureKeys.length > 0) {
+         popupContent = `<div style="text-align: left; font-weight: bold; margin-bottom: 8px; color: #fff; font-size: 14px; border-bottom: 1px solid #777; padding-bottom: 5px;">Selected lectures :</div>
+         <table style="width: 100%; border-collapse: collapse; text-align: left; font-size: 13px; color: #fff; margin-top: 5px;">
+           ${lectureKeys.map(l => `<tr>
+             <td style="padding: 6px 20px 6px 0; border-bottom: 1px solid #777;">${escapeHtml(l)}</td>
+             <td style="padding: 6px 0; border-bottom: 1px solid #777; white-space: nowrap; color: #ddd;">${lectureCounts[l]} Qs</td>
+           </tr>`).join('')}
+         </table>`;
+         
+         titleContainer.innerHTML = `
+            <span>${escapeHtml(subjectText)}</span>
+            <div class="exam-help-icon" onclick="toggleExamLecturesPopup(event)">?</div>
+            <div id="exam-lectures-popup" class="exam-lectures-popup" style="min-width: 250px;">
+               ${popupContent}
+            </div>
+          `;
       } else {
-        titleContainer.innerHTML = `
-          <span>${escapeHtml(subjectText)}</span>
-          <div class="exam-help-icon" onclick="toggleExamLecturesPopup(event)">?</div>
-          <div id="exam-lectures-popup" class="exam-lectures-popup">
-             ${lectures.map(l => escapeHtml(l)).join('<br>')}
-          </div>
-        `;
+         titleContainer.innerHTML = `<span>${escapeHtml(subjectText)}</span>`;
       }
     }
 
@@ -1284,6 +1299,74 @@ function ensureGroupOrder(groups, sectionType, subjectName){
       }).join('')}</div><div class="answer-summary"><strong>Correct Answer:</strong> <span class="answer-value">${escapeHtml(getFormattedCurrentCorrectAnswerLocal(q))}</span></div><div class="explanation-box visible"><strong>Explanation:</strong> ${escapeHtml(q.explanation||'No explanation available.')}</div></div>`;
     });
     reviewDiv.innerHTML=html;
+  };
+    const _origFinishExam = window.finishExam;
+  window.finishExam = function() {
+    if (!state.currentExam) return _origFinishExam ? _origFinishExam() : null;
+    
+    if (state.currentExam.mode === 'exam' && state.currentExam.direction === 'twoway') {
+      const unansweredCount = state.currentExam.answers.filter(a => a === null || (Array.isArray(a) && a.length === 0)).length;
+      if (unansweredCount > 0) {
+        showDialog({
+          title: 'تأكيد التسليم',
+          message: `<div style="font-size: 15px; margin-bottom: 10px;">هناك ${unansweredCount} سؤال لم تحلهم، هل تريد تأكيد تسليم الاختبار دون حلهم؟</div>`,
+          showCancel: true,
+          confirmText: 'نعم',
+          cancelText: 'لا، العودة للامتحان',
+          onConfirm: () => {
+             if (_origFinishExam) _origFinishExam();
+          },
+          onCancel: () => {}
+        });
+
+        setTimeout(() => {
+          const actions = document.querySelector('#dialog-overlay .dialog-actions');
+          if (!actions) return;
+          
+          actions.querySelectorAll('.dialog-extra-btn').forEach(btn => btn.remove());
+          const confirmBtn = document.getElementById('dialog-confirm');
+          const cancelBtn = document.getElementById('dialog-cancel');
+          
+          while (actions.firstChild) {
+            actions.removeChild(actions.firstChild);
+          }
+          
+          const yesBtn = document.createElement('button');
+          yesBtn.className = 'btn-danger dialog-extra-btn';
+          yesBtn.textContent = 'نعم';
+          yesBtn.onclick = () => {
+            hideDialog();
+            if (_origFinishExam) _origFinishExam();
+          };
+          actions.appendChild(yesBtn);
+          
+          const saveBtn = document.createElement('button');
+          saveBtn.className = 'btn-primary dialog-extra-btn';
+          saveBtn.textContent = 'نعم وحفظ التقدم';
+          saveBtn.onclick = () => {
+            hideDialog();
+            state.currentExam.questions.forEach((q, i) => {
+              const ans = state.currentExam.answers[i];
+              if (ans !== null && !(Array.isArray(ans) && ans.length === 0)) {
+                if (typeof addProgressIdsForQuestion === 'function') addProgressIdsForQuestion(q);
+              }
+            });
+            if (typeof saveProgress === 'function') saveProgress();
+            
+            if (_origFinishExam) _origFinishExam();
+          };
+          actions.appendChild(saveBtn);
+          
+          if (cancelBtn) {
+              cancelBtn.textContent = 'لا، العودة للامتحان';
+              actions.appendChild(cancelBtn);
+          }
+        }, 0);
+        return;
+      }
+    }
+    
+    if (_origFinishExam) _origFinishExam();
   };
   renderExamNav = function(){
     if(!state.currentExam) return;
