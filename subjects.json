@@ -961,16 +961,5 @@
     "totalQuestions": 14,
     "totalLectures": 2,
     "hasAiFolder": false
-  },
-  {
-    "id": "images",
-    "name": "images",
-    "lectures": [],
-    "ai": [],
-    "years": [],
-    "allQuestions": [],
-    "totalQuestions": 0,
-    "totalLectures": 0,
-    "hasAiFolder": false
   }
 ]
