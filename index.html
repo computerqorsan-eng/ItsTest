@@ -124,6 +124,29 @@
     .exam-lectures-popup.show {
       display: block;
     }
+        #question-grid .question-grid-item, #question-grid button {
+      background-color: var(--bg-card) !important;
+      color: var(--text-color) !important;
+      border: 2px solid var(--border-color) !important;
+    }
+    #question-grid .question-grid-item.answered, #question-grid button.answered {
+      background-color: #888 !important;
+      color: #fff !important;
+      border-color: #888 !important;
+    }
+    #question-grid .question-grid-item.correct, #question-grid button.correct {
+      background-color: var(--success) !important;
+      color: #fff !important;
+      border-color: var(--success) !important;
+    }
+    #question-grid .question-grid-item.wrong, #question-grid button.wrong {
+      background-color: var(--danger) !important;
+      color: #fff !important;
+      border-color: var(--danger) !important;
+    }
+    #question-grid .question-grid-item.active, #question-grid button.active {
+      border-color: var(--primary-color) !important;
+    }
   </style>
 </head>
 <body>
