@@ -1030,7 +1030,7 @@ function ensureGroupOrder(groups, sectionType, subjectName){
     return ans === q.correctIndex;
   };
 
-  window.selectOption = function(index) {
+    window.selectOption = function(index) {
     if (!state.currentExam) return;
     const idx = state.currentExam.currentIndex;
     const q = state.currentExam.questions[idx];
@@ -1053,6 +1053,15 @@ function ensureGroupOrder(groups, sectionType, subjectName){
       }
     } else {
       state.currentExam.answers[idx] = index;
+      if (state.currentExam.mode === 'training' && (state.currentExam.firstAnswers[idx] === null || state.currentExam.firstAnswers[idx] === undefined)) {
+        state.currentExam.firstAnswers[idx] = index;
+        if (!window.isAnswerCorrect(q, index)) {
+          if (!state.wrongQuestions.includes(q.id)) {
+            state.wrongQuestions.push(q.id);
+            saveWrongQuestions();
+          }
+        }
+      }
     }
     saveExamState();
     renderExam();
@@ -1120,7 +1129,40 @@ function ensureGroupOrder(groups, sectionType, subjectName){
       popup.classList.toggle('show');
     }
   };
+  window.renderGrid = function(){
+    if (!state.currentExam) return;
+    const grid = el('question-grid');
+    if (!grid) return;
 
+    const { questions, currentIndex, mode, answers, firstAnswers } = state.currentExam;
+
+    let html = '';
+    questions.forEach((q, i) => {
+      let cls = 'grid-item';
+      if (i === currentIndex) cls += ' active';
+
+      if (mode === 'training') {
+        const firstAns = firstAnswers[i];
+        if (firstAns !== null && firstAns !== undefined) {
+          if (window.isAnswerCorrect(q, firstAns)) {
+            cls += ' correct';
+          } else {
+            cls += ' wrong';
+          }
+        }
+      } else {
+        const ans = answers[i];
+        const isAnswered = ans !== null && ans !== undefined && (!Array.isArray(ans) || ans.length > 0);
+        if (isAnswered) {
+          cls += ' answered';
+        }
+      }
+
+      html += `<button class="${cls}" onclick="goToQuestion(${i})">${i + 1}</button>`;
+    });
+
+    grid.innerHTML = html;
+  };
   if (!window.examLecturesPopupListenersAdded) {
     window.examLecturesPopupListenersAdded = true;
     document.addEventListener('click', function(e) {
@@ -1189,7 +1231,7 @@ function ensureGroupOrder(groups, sectionType, subjectName){
 
     renderGrid();
 
-        const gridEl = el('question-grid');
+            const gridEl = el('question-grid');
     if (gridEl) {
       let titleContainer = el('exam-title-container');
       if (!titleContainer) {
@@ -1199,17 +1241,30 @@ function ensureGroupOrder(groups, sectionType, subjectName){
       }
       
       const subjects = [...new Set(questions.map(x => x.subjectName).filter(Boolean))];
-      const lectures = [...new Set(questions.map(x => x.lectureName).filter(Boolean))];
       const subjectText = subjects.length > 0 ? subjects[0] : 'Exam';
       
+      const lectureCounts = {};
+      questions.forEach(q => {
+        const lname = q.lectureName || 'Other';
+        lectureCounts[lname] = (lectureCounts[lname] || 0) + 1;
+      });
+
+      let popupRows = Object.entries(lectureCounts).map(([lname, count]) => 
+        `<tr><td style="padding: 2px 8px 2px 0; text-align: left;">${escapeHtml(lname)}</td><td style="padding: 2px 0 2px 8px; text-align: right; font-weight: bold;">${count}</td></tr>`
+      ).join('');
+
       titleContainer.innerHTML = `
-        <span>${escapeHtml(subjectText)}</span>
         <div class="exam-help-icon" onclick="toggleExamLecturesPopup(event)">?</div>
+        <span>${escapeHtml(subjectText)}</span>
         <div id="exam-lectures-popup" class="exam-lectures-popup">
-           ${lectures.map(l => escapeHtml(l)).join('<br>')}
+           <div style="font-weight: bold; margin-bottom: 6px;">Selected lectures :</div>
+           <table style="width: 100%; border-collapse: collapse; font-size: 12px;">
+             ${popupRows}
+           </table>
         </div>
       `;
     }
+
 
     const showAnswerState = state.currentExam.mode === 'training' ? getTrainingShowAnswerState(state.currentExam, idx) : false;
     const fav = state.favorites.includes(q.id);
@@ -1226,6 +1281,91 @@ function ensureGroupOrder(groups, sectionType, subjectName){
     refreshFavoriteButtonsUI();
     renderExamNav();
   };
+      window.finishExam = function() {
+  if (!state.currentExam) return;
+  state.currentExam.endTime = new Date().getTime();
+  
+  let correct = 0;
+  let wrong = 0;
+  let unanswered = 0;
+  
+  const questions = state.currentExam.questions || [];
+  const total = questions.length;
+  const answers = state.currentExam.answers || [];
+  const firstAnswers = state.currentExam.firstAnswers || [];
+  const mode = state.currentExam.mode;
+
+  questions.forEach((q, i) => {
+    let ans = null;
+    if (mode === 'exam') {
+      ans = answers[i];
+    } else {
+      // في وضع التدريب، يتم اعتماد الإجابة الأولى إن وجدت، وإلا يتم الاعتماد على الإجابة الحالية
+      const first = firstAnswers[i];
+      ans = (first !== null && first !== undefined) ? first : answers[i];
+    }
+
+    // التأكد الدقيق مما إذا كان السؤال غير مجاب (null, undefined, أو مصفوفة فارغة)
+    const isUnanswered = ans === null || ans === undefined || (Array.isArray(ans) && ans.length === 0);
+
+    if (isUnanswered) {
+      unanswered++;
+    } else {
+      let ok = false;
+      if (typeof window.isAnswerCorrect === 'function') {
+        ok = window.isAnswerCorrect(q, ans);
+      } else if (typeof getCorrectIndex === 'function') {
+        ok = (ans === getCorrectIndex(q));
+      } else {
+        // فحص احتراطي في حال كانت الإجابات متعددة الخيارات (Arrays)
+        if (Array.isArray(q.correctIndex) && Array.isArray(ans)) {
+          ok = ans.length === q.correctIndex.length && ans.every(val => q.correctIndex.includes(val));
+        } else {
+          ok = (ans === q.correctIndex);
+        }
+      }
+
+      if (ok) correct++;
+      else wrong++;
+    }
+  });
+
+  const scorePct = total > 0 ? Math.round((correct / total) * 100) : 0;
+
+  if (el('exam-timer')) el('exam-timer').classList.add('hidden');
+  showScreen('results-screen');
+
+  if (el('results-title')) el('results-title').textContent = (typeof theme === 'function' && theme().texts.resultsTitle) || 'Results';
+
+  const resultsContent = el('results-content');
+  if (resultsContent) {
+    resultsContent.innerHTML = `
+      <div class="results-summary">
+        <div class="result-circle">
+          <svg viewBox="0 0 36 36" class="circular-chart ${scorePct >= 50 ? 'green' : 'red'}">
+            <path class="circle-bg" d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831" />
+            <path class="circle" stroke-dasharray="${scorePct}, 100" d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831" />
+            <text x="18" y="20.35" class="percentage">${scorePct}%</text>
+          </svg>
+        </div>
+        <div class="results-stats-grid">
+           <div class="stat-box" style="color:var(--success)"><span>✅ صحيح</span><strong>${correct}</strong></div>
+           <div class="stat-box" style="color:var(--danger)"><span>❌ خطأ</span><strong>${wrong}</strong></div>
+           <div class="stat-box" style="color:var(--text-muted)"><span>⚪ غير مجاب</span><strong>${unanswered}</strong></div>
+        </div>
+      </div>
+    `;
+  }
+
+  if (typeof reviewExam === 'function') reviewExam();
+  if (typeof saveMemoriesHistory === 'function') saveMemoriesHistory();
+  if (typeof saveProgress === 'function') saveProgress();
+  if (typeof saveWrongQuestions === 'function') saveWrongQuestions();
+  if (typeof saveExamState === 'function') saveExamState();
+  if (typeof stopBackgroundSound === 'function') stopBackgroundSound();
+  if (typeof playCelebrateSound === 'color' && scorePct >= 50) playCelebrateSound();
+  if (typeof startFireworks === 'function' && scorePct >= 50) startFireworks();
+};
     openReadonly = function(questionId){
     const q = state.allQuestions.find(item => item.id === questionId);
     if(!q) return;
@@ -1280,6 +1420,55 @@ function ensureGroupOrder(groups, sectionType, subjectName){
     });
     reviewDiv.innerHTML=html;
   };
+    window.handleFinishClick = function() {
+    if (!state.currentExam) return;
+    const questions = state.currentExam.questions;
+    let unanswered = 0;
+
+    questions.forEach((q, i) => {
+      let ans = null;
+      if (state.currentExam.mode === 'exam') {
+        ans = state.currentExam.answers[i];
+      } else {
+        const first = state.currentExam.firstAnswers[i];
+        ans = (first !== null && first !== undefined) ? first : state.currentExam.answers[i];
+      }
+      if (ans === null || ans === undefined || (Array.isArray(ans) && ans.length === 0)) {
+        unanswered++;
+      }
+    });
+
+    if (unanswered > 0) {
+      showUnansweredFinishDialog(unanswered);
+    } else {
+      finishExam();
+    }
+  };
+
+  window.showUnansweredFinishDialog = function(count) {
+    const overlay = el('dialog-overlay');
+    const title = el('dialog-title');
+    const body = el('dialog-body');
+    const actions = overlay ? overlay.querySelector('.dialog-actions') : null;
+    if (!overlay || !title || !body || !actions) {
+      if (confirm(`هناك ${count} سؤال لم تحلهم، هل تريد تأكيد تسليم الاختبار دون حلهم؟`)) {
+        finishExam();
+      }
+      return;
+    }
+
+    title.textContent = 'تأكيد التسليم';
+    body.innerHTML = `هناك ${count} سؤال لم تحلهم، هل تريد تأكيد تسليم الاختبار دون حلهم؟`;
+
+    actions.innerHTML = `
+      <button class="btn-primary" onclick="hideDialog(); finishExam();">نعم</button>
+      <button class="btn-primary" onclick="hideDialog(); if(typeof saveProgress==='function') saveProgress(); finishExam();">نعم وحفظ التقدم</button>
+      <button class="btn-secondary" onclick="hideDialog();">لا، العودة للامتحان</button>
+    `;
+
+    overlay.classList.remove('hidden');
+  };
+
   renderExamNav = function(){
     if(!state.currentExam) return;
     const nav = el('exam-nav');
@@ -1300,7 +1489,7 @@ function ensureGroupOrder(groups, sectionType, subjectName){
       if(showAnswerState || solved){
         nextBtn = idx < last
           ? '<button class="btn-primary" onclick="nextQuestion()">Next →</button>'
-          : '<button class="btn-primary" onclick="finishExam()">Finish</button>';
+          : '<button class="btn-primary" onclick="handleFinishClick()">Finish</button>';
       } else {
         if (q.isMultiple) {
           const ans = state.currentExam.answers[idx];
@@ -1308,6 +1497,22 @@ function ensureGroupOrder(groups, sectionType, subjectName){
           let btns = '';
           if (hasSelection) {
             btns += `<button class="btn-primary btn-submit" onclick="submitMultipleAnswer()">Submit</button>`;
+          }
+          nextBtn = btns;
+        } else {
+          nextBtn = '<span></span>';
+        }
+      }
+    } else {
+      if (idx < last) {
+        nextBtn = '<button class="btn-primary" onclick="nextQuestion()">Next →</button>';
+      } else {
+        nextBtn = '<button class="btn-primary" onclick="handleFinishClick()">Finish</button>';
+      }
+    }
+
+    nav.innerHTML = `${prevBtn}${nextBtn}`;
+  };
           }
           if (state.currentExam.firstAnswers[idx] !== null) {
             btns += `<button class="btn-small ml-10" onclick="showAnswer()">Show Answer</button>`;
