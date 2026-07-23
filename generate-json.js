@@ -288,11 +288,10 @@ if (!fs.existsSync(MATERIALS_DIR)) {
   console.error(`❌ Folder not found: ${MATERIALS_DIR}`);
   process.exit(1);
 }
-
 // استبعاد المجلدات غير المرغوبة (النظامية)
 const subjectFolders = fs.readdirSync(MATERIALS_DIR).filter(item => {
   const full = path.join(MATERIALS_DIR, item);
-  return fs.statSync(full).isDirectory() && !['.git', 'node_modules', '.github', 'scripts', 'audio', 'subjects', 'assets'].includes(item);
+  return fs.statSync(full).isDirectory() && !['.git', 'node_modules', '.github', 'scripts', 'audio', 'images', 'subjects', 'assets'].includes(item);
 });
 
 const subjects = [];
