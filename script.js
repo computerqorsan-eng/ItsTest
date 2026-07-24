@@ -900,7 +900,78 @@ function startExamSession(questions, mode, direction, sourceLabel, extraMinutes,
   if (mode === 'exam') startTimer();
   scrollQuestionIntoView(false);
 }
+// --- إضافة: وظائف عرض عنوان المادة ونافذة المحاضرات المختارة ---
+function renderExamTitle() {
+  if (!state.currentExam) return;
+  const subjectNameEl = el('exam-subject-name');
+  if (!subjectNameEl) return;
 
+  // اختيار اسم المادة من أولوية: historySubjectName ثم أسئلة الامتحان ثم displayLabel
+  const nameFromHistory = state.currentExam.historySubjectName;
+  const nameFromQuestions = state.currentExam.questions && state.currentExam.questions.length ? (state.currentExam.questions.map(q => q.subjectName).filter(Boolean)[0] || null) : null;
+  const fallbackName = state.currentExam.displayLabel || 'Exam';
+  subjectNameEl.textContent = nameFromHistory || nameFromQuestions || fallbackName;
+}
+
+function toggleExamLecturesPopup() {
+  const popup = el('exam-lectures-popup');
+  if (!popup) return;
+  // Toggle العرض
+  popup.classList.toggle('show');
+
+  if (popup.classList.contains('show')) {
+    renderExamLecturesList();
+    // إغلاق عند الضغط خارج النافذة
+    document.addEventListener('click', closeExamLecturesPopupOnClickOutside);
+    document.addEventListener('touchend', closeExamLecturesPopupOnClickOutside);
+  } else {
+    document.removeEventListener('click', closeExamLecturesPopupOnClickOutside);
+    document.removeEventListener('touchend', closeExamLecturesPopupOnClickOutside);
+  }
+}
+
+function closeExamLecturesPopupOnClickOutside(e) {
+  const popup = el('exam-lectures-popup');
+  const btn = el('exam-help-btn');
+  if (!popup) return;
+  if (!popup.contains(e.target) && !(btn && btn.contains(e.target))) {
+    popup.classList.remove('show');
+    document.removeEventListener('click', closeExamLecturesPopupOnClickOutside);
+    document.removeEventListener('touchend', closeExamLecturesPopupOnClickOutside);
+  }
+}
+
+function renderExamLecturesList() {
+  const listContainer = el('exam-lectures-list');
+  if (!listContainer || !state.currentExam) return;
+
+  // إذا تم حساب selectedLecturesWithCounts أثناء بدء الامتحان فاستخدمها (وتأكد أنها تحتوي عناصر بعد التصفية)
+  if (Array.isArray(state.currentExam.selectedLecturesWithCounts) && state.currentExam.selectedLecturesWithCounts.length) {
+    const rows = state.currentExam.selectedLecturesWithCounts.map(item => {
+      return `<div class="exam-lecture-item"><div class="exam-lecture-name">${escapeHtml(item.name)}</div><div class="exam-lecture-count">${item.questionCount}</div></div>`;
+    }).join('');
+    listContainer.innerHTML = rows || '<div style="color:#aaa;font-style:italic;">No lectures selected</div>';
+    return;
+  }
+
+  // خلاف ذلك، احسب من الأسئلة الحالية داخل الامتحان: تجميع بحسب lectureName أو batchName أو fallback
+  const counts = {};
+  state.currentExam.questions.forEach(q => {
+    const lectureKey = q.lectureName || q.batchName || q.groupName || 'General';
+    if (!lectureKey) return;
+    counts[lectureKey] = (counts[lectureKey] || 0) + 1;
+  });
+
+  const entries = Object.keys(counts).map(name => ({ name, questionCount: counts[name] })).filter(item => item.questionCount > 0);
+
+  if (!entries.length) {
+    listContainer.innerHTML = '<div style="color:#aaa;font-style:italic;">No lectures selected</div>';
+    return;
+  }
+
+  const html = entries.map(item => `<div class="exam-lecture-item"><div class="exam-lecture-name">${escapeHtml(item.name)}</div><div class="exam-lecture-count">${item.questionCount}</div></div>`).join('');
+  listContainer.innerHTML = html;
+}
 function renderExamTitle() {
   if (!state.currentExam) return;
   
@@ -968,6 +1039,10 @@ function startSpecialExam(questions, mode, direction){ startExamSession(shuffleA
 function renderOptionButton(opt, i, idx, showAnswerState, selectedIndex, correctIdx){ let cls='option-btn'; if(selectedIndex===i) cls+=' selected'; if(showAnswerState){ if(i===correctIdx) cls+=' correct'; else if(selectedIndex===i && i!==correctIdx) cls+=' wrong'; } return `<button class="${cls}" onclick="selectOption(${i})"><span class="option-label">${LETTERS[i]})</span>${escapeHtml(cleanOptionDisplay(opt))}</button>`; }
 function renderExam(){
   if(!state.currentExam) return;
+
+  // عرض عنوان المادة أعلى الصفحة
+  renderExamTitle();
+
   const t=theme();
   const questions=state.currentExam.questions;
   const idx=state.currentExam.currentIndex;
@@ -989,7 +1064,6 @@ function renderExam(){
     if(timerEl) timerEl.classList.remove('hidden');
   }
   renderGrid();
-    renderExamTitle();
   const correctIdx=getCorrectIndex(q);
   const showAnswerState=state.currentExam.mode==='training' && state.currentExam.showAnswer;
   const fav=state.favorites.includes(q.id);
@@ -1875,6 +1949,11 @@ window.addEventListener('DOMContentLoaded', async ()=>{
   'من جدَّ وجد، ومن زرع حصد.',
   'العلم يرفع بيوتًا لا عماد لها، والجهل يهدم بيت العز والشرف.',
   'ليس المجد أن لا تسقط، بل المجد أن تنهض كلما سقطت.',
+'{ یَرۡفَعِ ٱللَّهُ ٱلَّذِینَ ءَامَنُوا۟ مِنكُمۡ وَٱلَّذِینَ أُوتُوا۟ ٱلۡعِلۡمَ دَرَجَـٰتࣲۚ وَٱللَّهُ بِمَا تَعۡمَلُونَ خَبِیرࣱ }',
+'{ فَٱصۡبِرۡ صَبۡرࣰا جَمِیلًا }',
+'{ وَقُل رَّبِّ زِدۡنِی عِلۡمࣰا }',
+'{ قُلۡ هَلۡ یَسۡتَوِی ٱلَّذِینَ یَعۡلَمُونَ وَٱلَّذِینَ لَا یَعۡلَمُونَۗ إِنَّمَا یَتَذَكَّرُ أُو۟لُوا۟ ٱلۡأَلۡبَـٰبِ }',
+'{ سَنُرِیهِمۡ ءَایَـٰتِنَا فِی ٱلۡـَٔافَاقِ وَفِیۤ أَنفُسِهِمۡ حَتَّىٰ یَتَبَیَّنَ لَهُمۡ أَنَّهُ ٱلۡحَقُّۗ }',
   'تعب اليوم يصنع راحة الغد.',
   'العلم نور، ومن سار في النور بلغ غايته.',
   'لا تحسبن المجد تمرًا أنت آكله، لن تبلغ المجد حتى تلعق الصبر.',
