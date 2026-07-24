@@ -1008,7 +1008,7 @@ function ensureGroupOrder(groups, sectionType, subjectName){
   const baseOptions = (clone.options || []).map(opt => stripOptionPrefix(opt));
   clone.originalOptions = baseOptions.slice();
   clone.options = baseOptions.slice();
-  // التأكد من أن correctIndex و correctAnswerText صحيحان لكل الأسئلة
+  // تحديد الإجابة الصحيحة بغض النظر عن isMultiple
   if (clone.correctAnswerLetter) {
     const letterIndex = clone.correctAnswerLetter.charCodeAt(0) - 65;
     if (letterIndex >= 0 && letterIndex < clone.options.length) {
@@ -1023,8 +1023,7 @@ function ensureGroupOrder(groups, sectionType, subjectName){
     clone.correctIndex = resolveCorrectIndex(clone.options, clone.correctAnswer || '');
     clone.correctAnswerText = (clone.correctIndex >= 0) ? clone.options[clone.correctIndex] : stripOptionPrefix(clone.correctAnswer || '');
   }
-  // إزالة خاصية isMultiple من الاستنساخ لتوحيد المعاملة
-  delete clone.isMultiple;
+  // نحتفظ بـ isMultiple لأن العرض يعتمد عليها، ولا نحذفها
   return clone;
 };
 
