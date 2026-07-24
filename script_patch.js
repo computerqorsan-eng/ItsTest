@@ -1,4 +1,4 @@
-/* PATCH V5 */
+/* PATCH V5: keeps previous patch features and aligns with the requested 14 changes only */
 (function(){
   'use strict';
 
@@ -1004,19 +1004,29 @@ function ensureGroupOrder(groups, sectionType, subjectName){
     }, 0);
   };
   prepareQuestionForExam = function(question){
-    const clone = JSON.parse(JSON.stringify(question));
-    const baseOptions = (clone.options || []).map(opt => stripOptionPrefix(opt));
-    clone.originalOptions = baseOptions.slice();
-    clone.options = baseOptions.slice();
-    if (clone.isMultiple) {
-      clone.correctAnswerText = clone.correctAnswer;
-    } else {
-      clone.correctAnswerText = getCorrectAnswerText({ ...clone, options: baseOptions, originalOptions: baseOptions.slice() });
+  const clone = JSON.parse(JSON.stringify(question));
+  const baseOptions = (clone.options || []).map(opt => stripOptionPrefix(opt));
+  clone.originalOptions = baseOptions.slice();
+  clone.options = baseOptions.slice();
+  // التأكد من أن correctIndex و correctAnswerText صحيحان لكل الأسئلة
+  if (clone.correctAnswerLetter) {
+    const letterIndex = clone.correctAnswerLetter.charCodeAt(0) - 65;
+    if (letterIndex >= 0 && letterIndex < clone.options.length) {
+      clone.correctIndex = letterIndex;
+      clone.correctAnswerText = clone.options[letterIndex];
       clone.correctAnswer = clone.correctAnswerText;
-      clone.correctIndex = resolveCorrectIndex(clone.options, clone.correctAnswerText);
+    } else {
+      clone.correctIndex = resolveCorrectIndex(clone.options, clone.correctAnswer || '');
+      clone.correctAnswerText = (clone.correctIndex >= 0) ? clone.options[clone.correctIndex] : stripOptionPrefix(clone.correctAnswer || '');
     }
-    return clone;
-  };
+  } else {
+    clone.correctIndex = resolveCorrectIndex(clone.options, clone.correctAnswer || '');
+    clone.correctAnswerText = (clone.correctIndex >= 0) ? clone.options[clone.correctIndex] : stripOptionPrefix(clone.correctAnswer || '');
+  }
+  // إزالة خاصية isMultiple من الاستنساخ لتوحيد المعاملة
+  delete clone.isMultiple;
+  return clone;
+};
 
   window.isAnswerCorrect = function(q, ans) {
     if (!q) return false;
