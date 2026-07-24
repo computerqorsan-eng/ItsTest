@@ -1065,9 +1065,7 @@ function recordExamMemory(){
 function finishExam(){
   if(!state.currentExam) return;
   const unansweredCount = state.currentExam.answers.filter(a => a === null).length;
-  const mode = state.currentExam.mode;
-  const direction = state.currentExam.direction;
-  if (unansweredCount > 0 && (mode === 'training' || (mode === 'exam' && direction === 'twoway'))) {
+  if(state.currentExam.mode === 'training' && unansweredCount > 0){
     showDialog({
       title: 'تأكيد التسليم',
       message: `هناك ${unansweredCount} سؤال لم تحلهم، هل تريد تأكيد تسليم الاختبار دون حلهم؟`,
@@ -1079,18 +1077,6 @@ function finishExam(){
       },
       onCancel: () => {}
     });
-    setTimeout(() => {
-      const actions = document.querySelector('#dialog-overlay .dialog-actions');
-      if (!actions) return;
-      const confirmBtn = document.getElementById('dialog-confirm');
-      const cancelBtn = document.getElementById('dialog-cancel');
-      if (confirmBtn && cancelBtn && confirmBtn.parentNode === actions && cancelBtn.parentNode === actions) {
-        actions.removeChild(confirmBtn);
-        actions.removeChild(cancelBtn);
-        actions.appendChild(cancelBtn);
-        actions.appendChild(confirmBtn);
-      }
-    }, 0);
     return;
   }
   submitExamFinish();
