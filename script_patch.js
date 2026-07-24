@@ -1161,33 +1161,10 @@ window.submitExamFinish = function() {
       return `<button class="${cls}" onclick="selectOption(${i})"><span class="option-label">${LETTERS[i]})</span>${escapeHtml(cleanOptionDisplayLocal(opt))}</button>`;
     }
   }
-  function buildExamLecturesPopupContent() {
-  if (!state.currentExam) return '';
-  const questions = state.currentExam.questions;
-  const lectureCounts = {};
-  questions.forEach(q => {
-    const lec = q.lectureName || 'Unknown';
-    lectureCounts[lec] = (lectureCounts[lec] || 0) + 1;
-  });
-  const lectures = Object.keys(lectureCounts);
-  if (!lectures.length) return 'No lectures selected.';
-  lectures.sort((a, b) => lectureCounts[b] - lectureCounts[a]);
-  let html = '<div style="font-weight:bold; margin-bottom:8px;">Selected lectures :</div>';
-  html += '<div style="display:table; width:100%;">';
-  lectures.forEach(lec => {
-    html += `<div style="display:table-row;">`;
-    html += `<span style="display:table-cell; padding:4px 8px 4px 0;">${escapeHtml(lec)}</span>`;
-    html += `<span style="display:table-cell; padding:4px 0 4px 8px; text-align:right; font-weight:bold;">${lectureCounts[lec]}</span>`;
-    html += `</div>`;
-  });
-  html += '</div>';
-  return html;
-}
-    window.toggleExamLecturesPopup = function(e) {
+  window.toggleExamLecturesPopup = function(e) {
     e.stopPropagation();
     const popup = document.getElementById('exam-lectures-popup');
     if (popup) {
-      popup.innerHTML = buildExamLecturesPopupContent();
       popup.classList.toggle('show');
     }
   };
@@ -1260,7 +1237,7 @@ window.submitExamFinish = function() {
 
     renderGrid();
 
-        const gridEl = el('exam-grid');
+    const gridEl = el('exam-grid');
     if (gridEl) {
       let titleContainer = el('exam-title-container');
       if (!titleContainer) {
@@ -1270,16 +1247,21 @@ window.submitExamFinish = function() {
       }
       
       const subjects = [...new Set(questions.map(x => x.subjectName).filter(Boolean))];
+      const lectures = [...new Set(questions.map(x => x.lectureName).filter(Boolean))];
       const subjectText = subjects.length > 0 ? subjects[0] : 'Exam';
       
-      titleContainer.innerHTML = `
-        <span>${escapeHtml(subjectText)}</span>
-        <div class="exam-help-icon" onclick="toggleExamLecturesPopup(event)">?</div>
-        <div id="exam-lectures-popup" class="exam-lectures-popup">
-          <!-- filled dynamically -->
-        </div>
-      `;
-    }
+      if (lectures.length <= 1) {
+        const lecText = lectures.length === 1 ? ` - ${lectures[0]}` : '';
+        titleContainer.innerHTML = `<span>${escapeHtml(subjectText)}${escapeHtml(lecText)}</span>`;
+      } else {
+        titleContainer.innerHTML = `
+          <span>${escapeHtml(subjectText)}</span>
+          <div class="exam-help-icon" onclick="toggleExamLecturesPopup(event)">?</div>
+          <div id="exam-lectures-popup" class="exam-lectures-popup">
+             ${lectures.map(l => escapeHtml(l)).join('<br>')}
+          </div>
+        `;
+      }
     }
 
     const showAnswerState = state.currentExam.mode === 'training' ? getTrainingShowAnswerState(state.currentExam, idx) : false;
