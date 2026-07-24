@@ -1,4 +1,4 @@
-/* PATCH V5: keeps previous patch features and aligns with the requested 14 changes only */
+/* PATCH V5 */
 (function(){
   'use strict';
 
