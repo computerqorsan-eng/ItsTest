@@ -1300,7 +1300,8 @@ function ensureGroupOrder(groups, sectionType, subjectName){
     });
     reviewDiv.innerHTML=html;
   };
-      const _origFinishExam = window.finishExam;
+      var _origFinishExam = window._origFinishExam || window.finishExam;
+window._origFinishExam = _origFinishExam;
   window.finishExam = function() {
     if (!state.currentExam) return _origFinishExam ? _origFinishExam() : null;
     
