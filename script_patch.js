@@ -1030,139 +1030,99 @@ function ensureGroupOrder(groups, sectionType, subjectName){
     return ans === q.correctIndex;
   };
 
-    window.selectOption = function(index) {
-    if (!state.currentExam) return;
-    const idx = state.currentExam.currentIndex;
-    const q = state.currentExam.questions[idx];
+  window.selectOption = function(index) {
+  if (!state.currentExam) return;
+  const idx = state.currentExam.currentIndex;
+  const q = state.currentExam.questions[idx];
 
-    if (state.currentExam.mode === 'training' && state.currentExam.showAnswer) return;
+  if (state.currentExam.mode === 'training' && state.currentExam.showAnswer) return;
 
-    if (q.isMultiple) {
-      if (!Array.isArray(state.currentExam.answers[idx])) {
-        state.currentExam.answers[idx] = [];
-      }
-      const currentAns = state.currentExam.answers[idx];
-      const pos = currentAns.indexOf(index);
-      if (pos !== -1) {
-        currentAns.splice(pos, 1);
-      } else {
-        currentAns.push(index);
-      }
-      if (currentAns.length === 0) {
-        state.currentExam.answers[idx] = null;
-      }
-    } else {
-      state.currentExam.answers[idx] = index;
-      if (state.currentExam.mode === 'training' && state.currentExam.firstAnswers[idx] === null) {
-        state.currentExam.firstAnswers[idx] = index;
-        const isCorrect = window.isAnswerCorrect ? window.isAnswerCorrect(q, index) : (index === q.correctIndex);
-        state.currentExam.showAnswer = true;
-        if (!isCorrect && !state.wrongQuestions.includes(q.id)) {
-          state.wrongQuestions.push(q.id);
-          if (typeof saveWrongQuestions === 'function') saveWrongQuestions();
-        }
-      }
+  if (q.isMultiple) {
+    if (!Array.isArray(state.currentExam.answers[idx])) {
+      state.currentExam.answers[idx] = [];
     }
-    if (typeof saveExamState === 'function') saveExamState();
-    if (typeof renderExam === 'function') renderExam();
-  };
-
-    window.submitMultipleAnswer = function() {
-    if (!state.currentExam) return;
-    const idx = state.currentExam.currentIndex;
-    const q = state.currentExam.questions[idx];
+    const currentAns = state.currentExam.answers[idx];
+    const pos = currentAns.indexOf(index);
+    if (pos !== -1) {
+      currentAns.splice(pos, 1);
+    } else {
+      currentAns.push(index);
+    }
+    if (currentAns.length === 0) {
+      state.currentExam.answers[idx] = null;
+    }
+  } else {
+    state.currentExam.answers[idx] = index;
+  }
+  if (state.currentExam.firstAnswers[idx] === null) {
     const ans = state.currentExam.answers[idx];
+    state.currentExam.firstAnswers[idx] = Array.isArray(ans) ? [...ans] : ans;
+  }
+  saveExamState();
+  renderExam();
+};
 
-    if (ans === null || (Array.isArray(ans) && ans.length === 0)) return;
+  window.submitMultipleAnswer = function() {
+  if (!state.currentExam) return;
+  const idx = state.currentExam.currentIndex;
+  const q = state.currentExam.questions[idx];
+  const ans = state.currentExam.answers[idx];
 
-    if (state.currentExam.mode === 'training' && state.currentExam.firstAnswers[idx] === null) {
-      state.currentExam.firstAnswers[idx] = Array.isArray(ans) ? [...ans] : ans;
-    }
+  if (state.currentExam.firstAnswers[idx] === null) {
+    const savedAns = Array.isArray(ans) ? [...ans] : ans;
+    state.currentExam.firstAnswers[idx] = savedAns;
+    // إذا كانت الإجابة صحيحة، نعرضها فوراً
+  }
 
-    const isCorrect = window.isAnswerCorrect ? window.isAnswerCorrect(q, ans) : false;
-
-    if (state.currentExam.mode === 'training') {
-      state.currentExam.showAnswer = true;
-    } else {
-      state.currentExam.showAnswer = isCorrect;
-    }
-    
-    if (!isCorrect && !state.wrongQuestions.includes(q.id)) {
+  if (window.isAnswerCorrect(q, ans)) {
+    state.currentExam.showAnswer = true;
+  } else {
+    state.currentExam.showAnswer = false;
+    if (!state.wrongQuestions.includes(q.id)) {
       state.wrongQuestions.push(q.id);
-      if (typeof saveWrongQuestions === 'function') saveWrongQuestions();
+      saveWrongQuestions();
     }
+  }
+  saveExamState();
+  renderExam();
+};
+window.submitExamFinish = function() {
+  if(!state.currentExam) return;
+  state.currentExam.submitted = true;
+  state.currentExam.endTime = Date.now();
 
-    if (typeof saveExamState === 'function') saveExamState();
-    if (typeof renderExam === 'function') renderExam();
-  };
-    window.renderGrid = function() {
-    const grid = document.getElementById('question-grid');
-    if (!grid || !state.currentExam) return;
-    grid.innerHTML = '';
-    state.currentExam.questions.forEach((q, i) => {
-      const btn = document.createElement('button');
-      btn.className = 'grid-item';
-      if (i === state.currentExam.currentIndex) btn.classList.add('active');
-
-      const isTraining = state.currentExam.mode === 'training';
-      const firstAns = state.currentExam.firstAnswers[i];
-      const currentAns = state.currentExam.answers[i];
-
-      if (isTraining) {
-        if (firstAns !== null) {
-          const isCorrect = window.isAnswerCorrect ? window.isAnswerCorrect(q, firstAns) : (firstAns === q.correctIndex);
-          if (isCorrect) {
-            btn.classList.add('correct');
-          } else {
-            btn.classList.add('wrong');
-          }
-        }
-      } else {
-        const hasAnswer = currentAns !== null && !(Array.isArray(currentAns) && currentAns.length === 0);
-        if (hasAnswer) {
-          btn.classList.add('answered');
-        }
+  // في حالة التدريب، تأكد من نسخ الإجابات إلى firstAnswers إذا كانت فارغة
+  if (state.currentExam.mode === 'training') {
+    const first = state.currentExam.firstAnswers;
+    const ans = state.currentExam.answers;
+    for (let i = 0; i < first.length; i++) {
+      if (first[i] === null && ans[i] !== null) {
+        first[i] = Array.isArray(ans[i]) ? [...ans[i]] : ans[i];
       }
+    }
+  }
 
-      btn.textContent = i + 1;
-      btn.onclick = () => {
-        state.currentExam.currentIndex = i;
-        if (typeof saveExamState === 'function') saveExamState();
-        if (typeof renderExam === 'function') renderExam();
-      };
-      grid.appendChild(btn);
+  if(state.currentExam.mode === 'exam'){
+    state.currentExam.questions.forEach((q, idx) => {
+      const ans = state.currentExam.answers[idx];
+      if(ans !== null && !isAnswerCorrect(q, ans) && !state.wrongQuestions.includes(q.id)) state.wrongQuestions.push(q.id);
     });
-  };
+    saveWrongQuestions();
+  }
 
-  window.calculateScore = function() {
-    if (!state.currentExam) return { total: 0, correct: 0, wrong: 0, unanswered: 0, percentage: 0 };
-    const exam = state.currentExam;
-    let correct = 0;
-    let wrong = 0;
-    let unanswered = 0;
-    const total = exam.questions.length;
+  clearInterval(state.timerInterval);
+  state.timerInterval = null;
+  saveProgress();
+  recordExamMemory();
+  clearExamState();
 
-    const answersToUse = exam.mode === 'training' ? exam.firstAnswers : exam.answers;
-
-    exam.questions.forEach((q, i) => {
-      const ans = answersToUse[i];
-      const isUnanswered = ans === null || (Array.isArray(ans) && ans.length === 0);
-
-      if (isUnanswered) {
-        unanswered++;
-      } else {
-        const isCorrect = window.isAnswerCorrect ? window.isAnswerCorrect(q, ans) : (ans === q.correctIndex);
-        if (isCorrect) {
-          correct++;
-        } else {
-          wrong++;
-        }
-      }
-    });
-
-    const percentage = total > 0 ? Math.round((correct / total) * 100) : 0;
-    return { total, correct, wrong, unanswered, percentage };
-  };
+  if(state.currentExam.mode === 'exam'){
+    showScreen('results-screen');
+    showWaitingMessages();
+  } else {
+    showResults();
+  }
+};
   /* keep exact answer rendering consistent */
   function cleanOptionDisplayLocal(text){ return String(text||'').replace(/\u200C+/g,''); }
   function getFormattedCurrentCorrectAnswerLocal(q){
