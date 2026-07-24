@@ -1247,54 +1247,22 @@ window.submitExamFinish = function() {
       }
       
       const subjects = [...new Set(questions.map(x => x.subjectName).filter(Boolean))];
+      const lectures = [...new Set(questions.map(x => x.lectureName).filter(Boolean))];
       const subjectText = subjects.length > 0 ? subjects[0] : 'Exam';
-
-      // تجميع الأسئلة حسب المحاضرة (lectureName أو groupName)
-      const lectureMap = new Map();
-      questions.forEach(q => {
-        const lecture = q.lectureName || q.groupName || 'غير مصنف';
-        lectureMap.set(lecture, (lectureMap.get(lecture) || 0) + 1);
-      });
-      // ترتيب المحاضرات حسب الظهور (أو أبجدياً)
-      const lectureEntries = Array.from(lectureMap.entries()).sort((a, b) => a[0].localeCompare(b[0]));
-
-      // بناء نافذة المحاضرات
-      const popupContent = lectureEntries.length
-        ? `<div style="margin-bottom:6px;font-weight:700;">Selected lectures :</div>
-           <ul style="list-style:none;padding:0;margin:0;display:flex;flex-direction:column;gap:6px;">
-             ${lectureEntries.map(([name, count]) =>
-               `<li style="display:flex;justify-content:space-between;gap:16px;font-size:0.9rem;">
-                 <span>${escapeHtml(name)}</span>
-                 <span style="font-weight:600;">${count}</span>
-               </li>`
-             ).join('')}
-           </ul>`
-        : '';
-
-      titleContainer.innerHTML = `
-        <span>${escapeHtml(subjectText)}</span>
-        <div class="exam-help-icon" onclick="toggleExamLecturesPopup(event)">?</div>
-        <div id="exam-lectures-popup" class="exam-lectures-popup">
-           ${popupContent}
-        </div>
-      `;
+      
+      if (lectures.length <= 1) {
+        const lecText = lectures.length === 1 ? ` - ${lectures[0]}` : '';
+        titleContainer.innerHTML = `<span>${escapeHtml(subjectText)}${escapeHtml(lecText)}</span>`;
+      } else {
+        titleContainer.innerHTML = `
+          <span>${escapeHtml(subjectText)}</span>
+          <div class="exam-help-icon" onclick="toggleExamLecturesPopup(event)">?</div>
+          <div id="exam-lectures-popup" class="exam-lectures-popup">
+             ${lectures.map(l => escapeHtml(l)).join('<br>')}
+          </div>
+        `;
+      }
     }
-
-    const showAnswerState = state.currentExam.mode === 'training' ? getTrainingShowAnswerState(state.currentExam, idx) : false;
-    const fav = state.favorites.includes(q.id);
-    const favIcon = fav ? '💚' : '♡';
-    const answerSummaryHtml = showAnswerState ? `<div class="answer-summary"><strong>Correct Answer:</strong> <span class="answer-value">${escapeHtml(getFormattedCurrentCorrectAnswerLocal(q))}</span></div>` : '';
-
-    const { text: cleanText, imageHtml } = formatQuestionTextWithImage(q.text);
-
-    if(el('question-container')){
-      el('question-container').innerHTML = `<div class="question-header"><span class="question-number">Q${idx+1}</span><div class="question-actions"><button class="icon-btn favorite-heart-btn ${fav?'active':''}" data-question-id="${escapeAttribute(q.id)}" aria-pressed="${fav?'true':'false'}" title="${fav?'إزالة من المفضلة':'إضافة إلى المفضلة'}" onclick="toggleFavorite('${q.id}')">${favIcon}</button><button class="icon-btn" onclick="toggleQuestionLocation()">${theme().icons.location}</button></div></div><p class="question-text">${escapeHtml(cleanText)}</p>${imageHtml}<div class="options-list">${q.options.map((opt,i)=>renderOptionButtonLocal(q, opt, i, showAnswerState, state.currentExam.answers[idx])).join('')}</div>${answerSummaryHtml}<div class="explanation-box ${showAnswerState?'visible':''}"><strong>Explanation:</strong> ${escapeHtml(q.explanation||'No explanation available.')}</div>${typeof renderRemoveWrongBtn === 'function' ? renderRemoveWrongBtn() : ''}`;
-      el('question-container').classList.add('exam-content-ltr');
-    }
-
-    refreshFavoriteButtonsUI();
-    renderExamNav();
-  };
 
     const showAnswerState = state.currentExam.mode === 'training' ? getTrainingShowAnswerState(state.currentExam, idx) : false;
     const fav = state.favorites.includes(q.id);
