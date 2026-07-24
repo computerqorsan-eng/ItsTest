@@ -1030,7 +1030,7 @@ function ensureGroupOrder(groups, sectionType, subjectName){
     return ans === q.correctIndex;
   };
 
-  window.selectOption = function(index) {
+    window.selectOption = function(index) {
     if (!state.currentExam) return;
     const idx = state.currentExam.currentIndex;
     const q = state.currentExam.questions[idx];
@@ -1053,32 +1053,115 @@ function ensureGroupOrder(groups, sectionType, subjectName){
       }
     } else {
       state.currentExam.answers[idx] = index;
+      if (state.currentExam.mode === 'training' && state.currentExam.firstAnswers[idx] === null) {
+        state.currentExam.firstAnswers[idx] = index;
+        const isCorrect = window.isAnswerCorrect ? window.isAnswerCorrect(q, index) : (index === q.correctIndex);
+        state.currentExam.showAnswer = true;
+        if (!isCorrect && !state.wrongQuestions.includes(q.id)) {
+          state.wrongQuestions.push(q.id);
+          if (typeof saveWrongQuestions === 'function') saveWrongQuestions();
+        }
+      }
     }
-    saveExamState();
-    renderExam();
+    if (typeof saveExamState === 'function') saveExamState();
+    if (typeof renderExam === 'function') renderExam();
   };
 
-  window.submitMultipleAnswer = function() {
+    window.submitMultipleAnswer = function() {
     if (!state.currentExam) return;
     const idx = state.currentExam.currentIndex;
     const q = state.currentExam.questions[idx];
     const ans = state.currentExam.answers[idx];
 
-    if (state.currentExam.firstAnswers[idx] === null) {
+    if (ans === null || (Array.isArray(ans) && ans.length === 0)) return;
+
+    if (state.currentExam.mode === 'training' && state.currentExam.firstAnswers[idx] === null) {
       state.currentExam.firstAnswers[idx] = Array.isArray(ans) ? [...ans] : ans;
     }
 
-    if (window.isAnswerCorrect(q, ans)) {
+    const isCorrect = window.isAnswerCorrect ? window.isAnswerCorrect(q, ans) : false;
+
+    if (state.currentExam.mode === 'training') {
       state.currentExam.showAnswer = true;
     } else {
-      state.currentExam.showAnswer = false;
-      if (!state.wrongQuestions.includes(q.id)) {
-        state.wrongQuestions.push(q.id);
-        saveWrongQuestions();
-      }
+      state.currentExam.showAnswer = isCorrect;
     }
-    saveExamState();
-    renderExam();
+    
+    if (!isCorrect && !state.wrongQuestions.includes(q.id)) {
+      state.wrongQuestions.push(q.id);
+      if (typeof saveWrongQuestions === 'function') saveWrongQuestions();
+    }
+
+    if (typeof saveExamState === 'function') saveExamState();
+    if (typeof renderExam === 'function') renderExam();
+  };
+    window.renderGrid = function() {
+    const grid = document.getElementById('question-grid');
+    if (!grid || !state.currentExam) return;
+    grid.innerHTML = '';
+    state.currentExam.questions.forEach((q, i) => {
+      const btn = document.createElement('button');
+      btn.className = 'grid-item';
+      if (i === state.currentExam.currentIndex) btn.classList.add('active');
+
+      const isTraining = state.currentExam.mode === 'training';
+      const firstAns = state.currentExam.firstAnswers[i];
+      const currentAns = state.currentExam.answers[i];
+
+      if (isTraining) {
+        if (firstAns !== null) {
+          const isCorrect = window.isAnswerCorrect ? window.isAnswerCorrect(q, firstAns) : (firstAns === q.correctIndex);
+          if (isCorrect) {
+            btn.classList.add('correct');
+          } else {
+            btn.classList.add('wrong');
+          }
+        }
+      } else {
+        const hasAnswer = currentAns !== null && !(Array.isArray(currentAns) && currentAns.length === 0);
+        if (hasAnswer) {
+          btn.classList.add('answered');
+        }
+      }
+
+      btn.textContent = i + 1;
+      btn.onclick = () => {
+        state.currentExam.currentIndex = i;
+        if (typeof saveExamState === 'function') saveExamState();
+        if (typeof renderExam === 'function') renderExam();
+      };
+      grid.appendChild(btn);
+    });
+  };
+
+  window.calculateScore = function() {
+    if (!state.currentExam) return { total: 0, correct: 0, wrong: 0, unanswered: 0, percentage: 0 };
+    const exam = state.currentExam;
+    let correct = 0;
+    let wrong = 0;
+    let unanswered = 0;
+    const total = exam.questions.length;
+
+    const answersToUse = exam.mode === 'training' ? exam.firstAnswers : exam.answers;
+
+    exam.questions.forEach((q, i) => {
+      const ans = answersToUse[i];
+      const isUnanswered = ans === null || (Array.isArray(ans) && ans.length === 0);
+
+      if (isUnanswered) {
+        unanswered++;
+      } else {
+        const isCorrect = window.isAnswerCorrect ? window.isAnswerCorrect(q, ans) : (ans === q.correctIndex);
+        if (isCorrect) {
+          correct++;
+        } else {
+          wrong++;
+        }
+      }
+    });
+
+    const percentage = total > 0 ? Math.round((correct / total) * 100) : 0;
+    return { total, correct, wrong, unanswered, percentage };
   };
   /* keep exact answer rendering consistent */
   function cleanOptionDisplayLocal(text){ return String(text||'').replace(/\u200C+/g,''); }
