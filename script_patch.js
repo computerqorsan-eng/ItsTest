@@ -1004,28 +1004,19 @@ function ensureGroupOrder(groups, sectionType, subjectName){
     }, 0);
   };
   prepareQuestionForExam = function(question){
-  const clone = JSON.parse(JSON.stringify(question));
-  const baseOptions = (clone.options || []).map(opt => stripOptionPrefix(opt));
-  clone.originalOptions = baseOptions.slice();
-  clone.options = baseOptions.slice();
-  // تحديد الإجابة الصحيحة بغض النظر عن isMultiple
-  if (clone.correctAnswerLetter) {
-    const letterIndex = clone.correctAnswerLetter.charCodeAt(0) - 65;
-    if (letterIndex >= 0 && letterIndex < clone.options.length) {
-      clone.correctIndex = letterIndex;
-      clone.correctAnswerText = clone.options[letterIndex];
-      clone.correctAnswer = clone.correctAnswerText;
+    const clone = JSON.parse(JSON.stringify(question));
+    const baseOptions = (clone.options || []).map(opt => stripOptionPrefix(opt));
+    clone.originalOptions = baseOptions.slice();
+    clone.options = baseOptions.slice();
+    if (clone.isMultiple) {
+      clone.correctAnswerText = clone.correctAnswer;
     } else {
-      clone.correctIndex = resolveCorrectIndex(clone.options, clone.correctAnswer || '');
-      clone.correctAnswerText = (clone.correctIndex >= 0) ? clone.options[clone.correctIndex] : stripOptionPrefix(clone.correctAnswer || '');
+      clone.correctAnswerText = getCorrectAnswerText({ ...clone, options: baseOptions, originalOptions: baseOptions.slice() });
+      clone.correctAnswer = clone.correctAnswerText;
+      clone.correctIndex = resolveCorrectIndex(clone.options, clone.correctAnswerText);
     }
-  } else {
-    clone.correctIndex = resolveCorrectIndex(clone.options, clone.correctAnswer || '');
-    clone.correctAnswerText = (clone.correctIndex >= 0) ? clone.options[clone.correctIndex] : stripOptionPrefix(clone.correctAnswer || '');
-  }
-  // نحتفظ بـ isMultiple لأن العرض يعتمد عليها، ولا نحذفها
-  return clone;
-};
+    return clone;
+  };
 
   window.isAnswerCorrect = function(q, ans) {
     if (!q) return false;
