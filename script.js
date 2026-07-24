@@ -865,7 +865,24 @@ function startExamSession(questions, mode, direction, sourceLabel, extraMinutes,
     showAnswer: false,
     masteredWrongIds: []
   };
-
+  // حفظ بيانات المحاضرات المختارة مع عدد الأسئلة الفعلي لكل محاضرة في الامتحان الحالي
+  if (meta && Array.isArray(meta.historyGroups) && meta.historyGroups.length > 0) {
+    state.currentExam.selectedLecturesWithCounts = meta.historyGroups.map(group => {
+      const groupName = group.name;
+      const groupType = meta.sectionType || group.type;
+      const subjectName = meta.historySubjectName || (state.currentSubject && state.currentSubject.name) || null;
+      const questionCount = state.currentExam.questions.filter(q => {
+        if (subjectName && q.subjectName && q.subjectName !== subjectName) return false;
+        if (groupType === 'lecture') return q.lectureName === groupName;
+        if (groupType === 'year') return q.batchName === groupName;
+        if (groupType === 'ai') return q.lectureName === groupName || q.aiFileName === groupName;
+        return false;
+      }).length;
+      return { name: groupName, questionCount };
+    }).filter(item => item.questionCount > 0);
+  } else {
+    state.currentExam.selectedLecturesWithCounts = [];
+  }
   // إظهار أو إخفاء المؤقت وعداد التقدم حسب نمط الامتحان
   const timerEl = el('exam-timer');
   const progressEl = el('exam-progress-compact');
@@ -882,6 +899,68 @@ function startExamSession(questions, mode, direction, sourceLabel, extraMinutes,
   renderExam();
   if (mode === 'exam') startTimer();
   scrollQuestionIntoView(false);
+}
+
+function renderExamTitle() {
+  if (!state.currentExam) return;
+  
+  const titleContainer = el('exam-title-container');
+  if (!titleContainer) return;
+  
+  const subjectNameEl = el('exam-subject-name');
+  if (subjectNameEl && state.currentExam.historySubjectName) {
+    subjectNameEl.textContent = state.currentExam.historySubjectName;
+  }
+}
+
+function toggleExamLecturesPopup() {
+  const popup = el('exam-lectures-popup');
+  if (!popup) return;
+  
+  popup.classList.toggle('show');
+  
+  if (popup.classList.contains('show')) {
+    renderExamLecturesList();
+    
+    document.addEventListener('click', closeExamLecturesPopupOnClickOutside);
+    document.addEventListener('touchend', closeExamLecturesPopupOnClickOutside);
+  } else {
+    document.removeEventListener('click', closeExamLecturesPopupOnClickOutside);
+    document.removeEventListener('touchend', closeExamLecturesPopupOnClickOutside);
+  }
+}
+
+function closeExamLecturesPopupOnClickOutside(event) {
+  const popup = el('exam-lectures-popup');
+  const btn = el('exam-help-btn');
+  
+  if (!popup || !btn) return;
+  
+  if (!popup.contains(event.target) && !btn.contains(event.target)) {
+    popup.classList.remove('show');
+    document.removeEventListener('click', closeExamLecturesPopupOnClickOutside);
+    document.removeEventListener('touchend', closeExamLecturesPopupOnClickOutside);
+  }
+}
+
+function renderExamLecturesList() {
+  const listContainer = el('exam-lectures-list');
+  if (!listContainer || !state.currentExam) return;
+  
+  if (!state.currentExam.selectedLecturesWithCounts || state.currentExam.selectedLecturesWithCounts.length === 0) {
+    listContainer.innerHTML = '<div style="color: #aaa; font-style: italic;">No lectures selected</div>';
+    return;
+  }
+  
+  let html = '';
+  state.currentExam.selectedLecturesWithCounts.forEach(item => {
+    html += `<div class="exam-lecture-item">
+      <div class="exam-lecture-name">${escapeHtml(item.name)}</div>
+      <div class="exam-lecture-count">${item.questionCount}</div>
+    </div>`;
+  });
+  
+  listContainer.innerHTML = html;
 }
 function renderRemoveWrongBtn(){ if(!state.currentExam || state.currentExam.collectionType!=='wrong' || state.currentExam.mode!=='training') return ''; const idx=state.currentExam.currentIndex; const q=state.currentExam.questions[idx]; const answered=state.currentExam.firstAnswers[idx]; if(answered===null || !isAnswerCorrect(q, answered) || !state.wrongQuestions.includes(q.id)) return ''; return `<button class="btn-secondary mt-20" onclick="confirmRemoveCurrentWrong()">✅ إزالة السؤال من الأخطاء</button>`; }
 function startSpecialExam(questions, mode, direction){ startExamSession(shuffleArray(questions.slice()).map(prepareQuestionForExam), mode, direction||'twoway', 'special', 5, { collectionType:null, displayLabel:'Special Exam', historySubjectName:'Special Exam', historyGroups:[] }); }
@@ -910,6 +989,7 @@ function renderExam(){
     if(timerEl) timerEl.classList.remove('hidden');
   }
   renderGrid();
+    renderExamTitle();
   const correctIdx=getCorrectIndex(q);
   const showAnswerState=state.currentExam.mode==='training' && state.currentExam.showAnswer;
   const fav=state.favorites.includes(q.id);
@@ -1065,13 +1145,13 @@ function recordExamMemory(){
 function finishExam(){
   if(!state.currentExam) return;
   const unansweredCount = state.currentExam.answers.filter(a => a === null).length;
-  if(state.currentExam.mode === 'training' && unansweredCount > 0){
+  if((state.currentExam.mode === 'training' || state.currentExam.mode === 'exam') && unansweredCount > 0){
     showDialog({
       title: 'تأكيد التسليم',
       message: `هناك ${unansweredCount} سؤال لم تحلهم، هل تريد تأكيد تسليم الاختبار دون حلهم؟`,
       showCancel: true,
-      confirmText: 'نعم',
       cancelText: 'لا، العودة للامتحان',
+      confirmText: 'نعم',
       onConfirm: () => {
         submitExamFinish();
       },
