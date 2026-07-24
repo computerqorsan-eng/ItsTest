@@ -1054,10 +1054,15 @@ function ensureGroupOrder(groups, sectionType, subjectName){
   } else {
     state.currentExam.answers[idx] = index;
   }
-  if (state.currentExam.firstAnswers[idx] === null) {
-    const ans = state.currentExam.answers[idx];
-    state.currentExam.firstAnswers[idx] = Array.isArray(ans) ? [...ans] : ans;
+
+  // لا نحفظ firstAnswers لأسئلة متعددة الخيارات في وضع التدريب إلا عند الضغط على Submit
+  if (state.currentExam.mode !== 'training' || !q.isMultiple) {
+    if (state.currentExam.firstAnswers[idx] === null) {
+      const ans = state.currentExam.answers[idx];
+      state.currentExam.firstAnswers[idx] = Array.isArray(ans) ? [...ans] : ans;
+    }
   }
+
   saveExamState();
   renderExam();
 };
