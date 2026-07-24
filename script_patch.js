@@ -1,4 +1,4 @@
-/* PATCH V5 */
+/* PATCH V5: keeps previous patch features and aligns with the requested 14 changes only */
 (function(){
   'use strict';
 
@@ -1030,7 +1030,7 @@ function ensureGroupOrder(groups, sectionType, subjectName){
     return ans === q.correctIndex;
   };
 
-    window.selectOption = function(index) {
+  window.selectOption = function(index) {
     if (!state.currentExam) return;
     const idx = state.currentExam.currentIndex;
     const q = state.currentExam.questions[idx];
@@ -1053,23 +1053,12 @@ function ensureGroupOrder(groups, sectionType, subjectName){
       }
     } else {
       state.currentExam.answers[idx] = index;
-      if (state.currentExam.mode === 'training' && state.currentExam.firstAnswers[idx] === null) {
-        state.currentExam.firstAnswers[idx] = index;
-        const isCorr = window.isAnswerCorrect ? window.isAnswerCorrect(q, index) : index === q.correctIndex;
-        if (!isCorr) {
-          if (!state.wrongQuestions.includes(q.id)) {
-            state.wrongQuestions.push(q.id);
-            saveWrongQuestions();
-          }
-        }
-        state.currentExam.showAnswer = true;
-      }
     }
     saveExamState();
     renderExam();
   };
 
-    window.submitMultipleAnswer = function() {
+  window.submitMultipleAnswer = function() {
     if (!state.currentExam) return;
     const idx = state.currentExam.currentIndex;
     const q = state.currentExam.questions[idx];
@@ -1082,7 +1071,7 @@ function ensureGroupOrder(groups, sectionType, subjectName){
     if (window.isAnswerCorrect(q, ans)) {
       state.currentExam.showAnswer = true;
     } else {
-      state.currentExam.showAnswer = true;
+      state.currentExam.showAnswer = false;
       if (!state.wrongQuestions.includes(q.id)) {
         state.wrongQuestions.push(q.id);
         saveWrongQuestions();
@@ -1090,81 +1079,6 @@ function ensureGroupOrder(groups, sectionType, subjectName){
     }
     saveExamState();
     renderExam();
-  };
-    window.renderGrid = function() {
-    if (!state.currentExam) return;
-    const grid = document.getElementById('question-grid');
-    if (!grid) return;
-    
-    let html = '';
-    state.currentExam.questions.forEach((q, i) => {
-      let cls = '';
-      if (i === state.currentExam.currentIndex) cls += ' active';
-      
-      const answersUsed = state.currentExam.mode === 'exam' ? state.currentExam.answers : state.currentExam.firstAnswers;
-      const ans = answersUsed[i];
-      const isUnanswered = ans === null || (Array.isArray(ans) && ans.length === 0);
-
-      if (!isUnanswered) {
-        if (state.currentExam.mode === 'exam') {
-          cls += ' answered';
-        } else {
-          const isCorr = window.isAnswerCorrect ? window.isAnswerCorrect(q, ans) : ans === q.correctIndex;
-          if (isCorr) {
-            cls += ' correct';
-          } else {
-            cls += ' wrong';
-          }
-        }
-      }
-      
-      html += `<button class="${cls.trim()}" onclick="goToQuestion(${i})">${i + 1}</button>`;
-    });
-    grid.innerHTML = html;
-  };
-
-  window.finishExam = function() {
-    if (!state.currentExam) return;
-    
-    if (typeof stopTimer === 'function') stopTimer();
-    
-    const questions = state.currentExam.questions;
-    const answersUsed = state.currentExam.mode === 'exam' ? state.currentExam.answers : state.currentExam.firstAnswers;
-    
-    let correctCount = 0;
-    let wrongCount = 0;
-    let unansweredCount = 0;
-    
-    questions.forEach((q, idx) => {
-      const ans = answersUsed[idx];
-      const isUnanswered = ans === null || (Array.isArray(ans) && ans.length === 0);
-      
-      if (isUnanswered) {
-        unansweredCount++;
-      } else {
-        const isCorr = window.isAnswerCorrect ? window.isAnswerCorrect(q, ans) : (ans === q.correctIndex);
-        if (isCorr) {
-          correctCount++;
-        } else {
-          wrongCount++;
-        }
-      }
-    });
-    
-    const total = questions.length;
-    const score = total > 0 ? Math.round((correctCount / total) * 100) : 0;
-    
-    state.currentExam.results = {
-      correct: correctCount,
-      wrong: wrongCount,
-      unanswered: unansweredCount,
-      score: score,
-      total: total
-    };
-    
-    saveExamState();
-    showScreen('results-screen');
-    if (typeof renderResults === 'function') renderResults();
   };
   /* keep exact answer rendering consistent */
   function cleanOptionDisplayLocal(text){ return String(text||'').replace(/\u200C+/g,''); }
