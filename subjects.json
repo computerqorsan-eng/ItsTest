@@ -4,6 +4,46 @@
     "name": "Introduction",
     "lectures": [
       {
+        "id": "introduction__lecture__cornea-sclera-iris",
+        "name": "Cornea , sclera , Iris",
+        "type": "lecture",
+        "subjectName": "Introduction",
+        "path": "Introduction/Cornea , sclera , Iris.txt",
+        "questions": [
+          {
+            "id": "introduction__lecture__cornea-sclera-iris__1__wmjgl3",
+            "number": "1",
+            "text": "What is this ?",
+            "options": [
+              "O",
+              "G",
+              "H",
+              "D"
+            ],
+            "originalOptions": [
+              "O",
+              "G",
+              "H",
+              "D"
+            ],
+            "correctAnswer": "B) G",
+            "correctAnswerText": "G",
+            "correctIndex": 1,
+            "correctIndices": [],
+            "isMultiple": false,
+            "correctAnswerLetter": "B",
+            "explanation": "###",
+            "batchName": "",
+            "pageNumber": "",
+            "subjectName": "Introduction",
+            "subjectId": "introduction",
+            "lectureName": "Cornea , sclera , Iris",
+            "groupName": "Cornea , sclera , Iris",
+            "sourceType": "lecture"
+          }
+        ]
+      },
+      {
         "id": "introduction__lecture__ent",
         "name": "ENT",
         "type": "lecture",
@@ -492,6 +532,37 @@
     "years": [],
     "allQuestions": [
       {
+        "id": "introduction__lecture__cornea-sclera-iris__1__wmjgl3",
+        "number": "1",
+        "text": "What is this ?",
+        "options": [
+          "O",
+          "G",
+          "H",
+          "D"
+        ],
+        "originalOptions": [
+          "O",
+          "G",
+          "H",
+          "D"
+        ],
+        "correctAnswer": "B) G",
+        "correctAnswerText": "G",
+        "correctIndex": 1,
+        "correctIndices": [],
+        "isMultiple": false,
+        "correctAnswerLetter": "B",
+        "explanation": "###",
+        "batchName": "",
+        "pageNumber": "",
+        "subjectName": "Introduction",
+        "subjectId": "introduction",
+        "lectureName": "Cornea , sclera , Iris",
+        "groupName": "Cornea , sclera , Iris",
+        "sourceType": "lecture"
+      },
+      {
         "id": "introduction__lecture__ent__1__p1ggod",
         "number": "1",
         "text": "A young male presents with unilateral epistaxis. What is the most likely diagnosis?",
@@ -958,8 +1029,8 @@
         "sourceType": "lecture"
       }
     ],
-    "totalQuestions": 14,
-    "totalLectures": 2,
+    "totalQuestions": 15,
+    "totalLectures": 3,
     "hasAiFolder": false
   }
 ]
