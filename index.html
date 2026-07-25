@@ -93,33 +93,43 @@
       font-size: 1.1em;
     }
     .exam-help-icon {
-      width: 16px;
-      height: 16px;
+      width: 18px;
+      height: 18px;
       border-radius: 50%;
       background-color: #888;
       color: #fff;
       display: inline-flex;
       align-items: center;
       justify-content: center;
-      font-size: 11px;
+      font-size: 12px;
       cursor: pointer;
       user-select: none;
+      border: none;
+      padding: 0;
+      margin-left: 6px;
+      transition: background-color 0.2s;
     }
-        .exam-lectures-popup {
+    .exam-help-icon:hover {
+      background-color: #666;
+    }
+    .exam-lectures-popup {
       position: absolute;
       top: 100%;
-      margin-top: 5px;
+      margin-top: 6px;
       background-color: #000;
       color: #fff;
-      padding: 8px 12px;
+      padding: 12px 16px;
       border-radius: 6px;
       font-size: 12px;
       z-index: 1000;
       text-align: left;
-      white-space: nowrap;
       display: none;
-      box-shadow: 0 2px 5px rgba(0,0,0,0.2);
-      line-height: 1.6;
+      box-shadow: 0 4px 16px rgba(0,0,0,0.35);
+      line-height: 1.5;
+      max-width: 340px;
+      min-width: 220px;
+      white-space: normal;
+      word-wrap: break-word;
     }
     .exam-lectures-popup.show {
       display: block;
@@ -253,31 +263,31 @@
     </div>
 
     <div id="exam-screen" class="screen">
-    <div class="exam-header"><button class="btn-back" onclick="exitExam()">← Exit</button><div class="exam-header-right"></div></div>
+      <div class="exam-header"><button class="btn-back" onclick="exitExam()">← Exit</button><div class="exam-header-right"></div></div>
 
-  <div id="exam-title-container" style="text-align: center; margin-bottom: 15px; font-weight: bold; color: var(--text-color, inherit); display: flex; justify-content: center; align-items: center; gap: 6px; position: relative; font-size: 1.1em;">
-    <span id="exam-subject-name"></span>
-    <button id="exam-help-btn" class="exam-help-icon" onclick="toggleExamLecturesPopup()" aria-label="Help" style="width: 18px; height: 18px; border-radius: 50%; background-color: #888; color: #fff; display: inline-flex; align-items: center; justify-content: center; font-size: 12px; cursor: pointer; border: none; padding: 0; margin-left: 6px;">?</button>
-    <div class="exam-lectures-popup" id="exam-lectures-popup" style="position: absolute; top: 100%; margin-top: 6px; background-color: #000; color: #fff; padding: 12px 16px; border-radius: 6px; font-size: 12px; z-index: 1000; text-align: left; display: none; box-shadow: 0 4px 16px rgba(0,0,0,0.35); line-height: 1.5; max-width: 340px; min-width: 220px; white-space: normal;">
-      <div style="font-weight: bold; margin-bottom: 8px;">Selected lectures :</div>
-      <div id="exam-lectures-list" style="max-height: 280px; overflow-y: auto;"></div>
+      <div id="exam-title-container">
+        <span id="exam-subject-name"></span>
+        <button id="exam-help-btn" class="exam-help-icon" onclick="toggleExamLecturesPopup(event)" aria-label="Help">?</button>
+        <div class="exam-lectures-popup" id="exam-lectures-popup">
+          <div style="font-weight: bold; margin-bottom: 8px;">Selected lectures :</div>
+          <div id="exam-lectures-list" style="max-height: 280px; overflow-y: auto;"></div>
+        </div>
+      </div>
+
+      <div id="question-grid" class="question-grid" dir="ltr"></div>
+      <div class="exam-tools-row">
+        <div class="exam-tools-left">
+          <button class="btn-grid-toggle" id="btn-grid-toggle" onclick="toggleGrid()"><span>☰</span> إخفاء الشبكة</button>
+          <button class="btn-secondary btn-exam-settings" id="btn-exam-settings" onclick="toggleExamSettings(true)">⚙️ Exam Settings</button>
+        </div>
+        <div class="exam-tools-right">
+          <div id="exam-progress-compact" class="exam-progress-badge hidden">🎯 0/0 · ✅0 · 0%</div>
+          <div id="exam-timer" class="exam-timer hidden"></div>
+        </div>
+      </div>
+      <div id="question-container" class="question-container"></div>
+      <div id="exam-nav" class="exam-nav"></div>
     </div>
-  </div>
-
-  <div id="question-grid" class="question-grid" dir="ltr"></div>
-  <div class="exam-tools-row">
-  <div class="exam-tools-left">
-    <button class="btn-grid-toggle" id="btn-grid-toggle" onclick="toggleGrid()"><span>☰</span> إخفاء الشبكة</button>
-    <button class="btn-secondary btn-exam-settings" id="btn-exam-settings" onclick="toggleExamSettings(true)">⚙️ Exam Settings</button>
-  </div>
-  <div class="exam-tools-right">
-    <div id="exam-progress-compact" class="exam-progress-badge hidden">🎯 0/0 · ✅0 · 0%</div>
-    <div id="exam-timer" class="exam-timer hidden"></div>
-  </div>
-</div>
-  <div id="question-container" class="question-container"></div>
-  <div id="exam-nav" class="exam-nav"></div>
-</div>
 
     <div id="results-screen" class="screen">
       <div class="screen-header"><button class="btn-back" onclick="goHome()">← Home</button><h3 id="results-title">Results</h3></div>
