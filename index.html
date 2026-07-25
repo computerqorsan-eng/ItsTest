@@ -1,7 +1,6 @@
 <!DOCTYPE html>
 <html lang="ar" dir="rtl">
 <head>
-</script>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
   <title>Medical Exam Practice</title>
@@ -9,7 +8,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=Amiri:wght@400;700&display=swap" rel="stylesheet">
-    <style>
+  <style>
     .multi-option-btn {
       display: flex;
       align-items: center;
@@ -80,7 +79,7 @@
     .ml-10 {
       margin-left: 10px;
     }
-        #exam-title-container {
+    #exam-title-container {
       text-align: center;
       margin-bottom: 15px;
       font-weight: bold;
@@ -115,21 +114,18 @@
     .exam-lectures-popup {
       position: absolute;
       top: 100%;
-      margin-top: 6px;
+      margin-top: 8px;
       background-color: #000;
       color: #fff;
-      padding: 12px 16px;
-      border-radius: 6px;
-      font-size: 12px;
+      padding: 16px 20px;
+      border-radius: 8px;
       z-index: 1000;
       text-align: left;
       display: none;
-      box-shadow: 0 4px 16px rgba(0,0,0,0.35);
-      line-height: 1.5;
-      max-width: 340px;
-      min-width: 220px;
-      white-space: normal;
-      word-wrap: break-word;
+      box-shadow: 0 6px 24px rgba(0,0,0,0.6);
+      max-width: 380px;
+      min-width: 280px;
+      border: 1px solid rgba(255,255,255,0.2);
     }
     .exam-lectures-popup.show {
       display: block;
@@ -175,11 +171,10 @@
       <div class="screen-header statistics-screen-header">
         <button class="btn-back" onclick="closeStatisticsPage()">← رجوع</button>
         <h3 id="statistics-screen-title">📊 الإحصائيات</h3>
-                <div class="panel-header-actions">
+        <div class="panel-header-actions">
           <button class="btn-secondary btn-mini" onclick="openStatsExclusionDialog()">⚙️</button>
           <button class="btn-secondary btn-mini btn-home-global" onclick="goHome()">🏠 Home</button>
         </div>
-
       </div>
       <div id="global-stats-container" class="stats-summary-grid"></div>
       <div id="subjects-stats-list" class="subject-stats-list"></div>
@@ -195,7 +190,7 @@
       <div class="modal-card statistics-modal" style="max-width: 90%; width: 560px;">
         <div class="panel-header modal-header"><h3>⚙️ إعدادات الإحصائيات</h3><button class="btn-close" onclick="closeStatsExclusionDialog()">✕</button></div>
         <div class="exclusion-section"><strong>المواد المستبعدة</strong><div id="subject-exclusions-list" class="exclusion-checkboxes"></div></div>
-             <div class="exclusion-section"><strong>الأقسام المستبعدة</strong><div id="section-exclusions-list" class="exclusion-checkboxes"><label><input type="checkbox" id="exclude-lectures"> المحاضرات (Lectures)</label><label><input type="checkbox" id="exclude-ai"> الذكاء الصناعي (AI)</label></div></div>
+        <div class="exclusion-section"><strong>الأقسام المستبعدة</strong><div id="section-exclusions-list" class="exclusion-checkboxes"><label><input type="checkbox" id="exclude-lectures"> المحاضرات (Lectures)</label><label><input type="checkbox" id="exclude-ai"> الذكاء الصناعي (AI)</label></div></div>
         <div class="dialog-actions"><button class="btn-secondary" onclick="closeStatsExclusionDialog()">إغلاق</button><button class="btn-primary" onclick="applyStatsExclusions()">✅ Apply</button></div>
       </div>
     </div>
@@ -268,8 +263,8 @@
       <div id="exam-title-container">
         <span id="exam-subject-name"></span>
         <button id="exam-help-btn" class="exam-help-icon" onclick="toggleExamLecturesPopup(event)" aria-label="Help">?</button>
-        <div class="exam-lectures-popup" id="exam-lectures-popup">
-          <div style="font-weight: bold; margin-bottom: 8px;">Selected lectures :</div>
+        <div class="exam-lectures-popup" id="exam-lectures-popup" dir="ltr">
+          <div style="font-weight: bold; font-style: italic; font-size: 19px; margin-bottom: 12px; letter-spacing: 0.5px;">Selected lectures :</div>
           <div id="exam-lectures-list" style="max-height: 280px; overflow-y: auto;"></div>
         </div>
       </div>
@@ -316,10 +311,10 @@
         </div>
         <div class="question-container"><canvas id="memories-chart" width="900" height="420"></canvas></div>
       </div>
-              <div class="memory-chart-nav">
-          <button class="btn-secondary" id="memory-prev-btn" onclick="changeMemoryPeriodOffset(-1)">السابق</button>
-          <button class="btn-secondary" id="memory-next-btn" onclick="changeMemoryPeriodOffset(1)">التالي</button>
-        </div>
+      <div class="memory-chart-nav">
+        <button class="btn-secondary" id="memory-prev-btn" onclick="changeMemoryPeriodOffset(-1)">السابق</button>
+        <button class="btn-secondary" id="memory-next-btn" onclick="changeMemoryPeriodOffset(1)">التالي</button>
+      </div>
       <div id="memories-time-tab" class="hidden">
         <div id="memories-time-summary" class="progress-grid"></div>
         <div class="hidden-panel visible history-panel">
@@ -350,7 +345,7 @@
     </div>
   </div>
 
-     <div id="dialog-overlay" class="dialog-overlay hidden" onclick="if(event.target.id==='dialog-overlay'){hideDialog()}">
+  <div id="dialog-overlay" class="dialog-overlay hidden" onclick="if(event.target.id==='dialog-overlay'){hideDialog()}">
     <div class="dialog-card"><div class="dialog-header"><div id="dialog-title">تنبيه</div><button class="btn-close" onclick="hideDialog()">✕</button></div><div id="dialog-body" class="dialog-body"></div><div class="dialog-actions"><button id="dialog-confirm" class="btn-primary" onclick="dialogConfirmAction()">موافق</button><button id="dialog-cancel" class="btn-secondary hidden" onclick="dialogCancelAction()">إلغاء</button></div></div>
   </div>
 
@@ -364,4 +359,4 @@
   <script src="script.js"></script>
   <script src="script_patch.js"></script>
 </body>
-  </html>
+</html>
