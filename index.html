@@ -91,7 +91,7 @@
       position: relative;
       font-size: 1.1em;
     }
-    .exam-help-icon {
+        .exam-help-icon {
       width: 18px;
       height: 18px;
       border-radius: 50%;
@@ -105,7 +105,8 @@
       user-select: none;
       border: none;
       padding: 0;
-      margin-left: 6px;
+      margin-right: 6px;
+      margin-left: 0;
       transition: background-color 0.2s;
     }
     .exam-help-icon:hover {
@@ -260,14 +261,14 @@
     <div id="exam-screen" class="screen">
       <div class="exam-header"><button class="btn-back" onclick="exitExam()">← Exit</button><div class="exam-header-right"></div></div>
 
-      <div id="exam-title-container">
-        <span id="exam-subject-name"></span>
+            <div id="exam-title-container">
         <button id="exam-help-btn" class="exam-help-icon" onclick="toggleExamLecturesPopup(event)" aria-label="Help">?</button>
+        <span id="exam-subject-name"></span>
         <div class="exam-lectures-popup" id="exam-lectures-popup" dir="ltr">
           <div style="font-weight: bold; font-style: italic; font-size: 19px; margin-bottom: 12px; letter-spacing: 0.5px;">Selected lectures :</div>
           <div id="exam-lectures-list" style="max-height: 280px; overflow-y: auto;"></div>
         </div>
-      </div>
+      </div>      
 
       <div id="question-grid" class="question-grid" dir="ltr"></div>
       <div class="exam-tools-row">
