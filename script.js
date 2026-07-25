@@ -865,24 +865,33 @@ function startExamSession(questions, mode, direction, sourceLabel, extraMinutes,
     showAnswer: false,
     masteredWrongIds: []
   };
-  // حفظ بيانات المحاضرات المختارة مع عدد الأسئلة الفعلي لكل محاضرة في الامتحان الحالي
+
+  // احسب قائمة المحاضرات المختارة مع عدد الأسئلة الفعلي لكل محاضرة داخل الامتحان الحالي
   if (meta && Array.isArray(meta.historyGroups) && meta.historyGroups.length > 0) {
     state.currentExam.selectedLecturesWithCounts = meta.historyGroups.map(group => {
       const groupName = group.name;
-      const groupType = meta.sectionType || group.type;
+      const groupType = meta.sectionType || group.type || 'lecture';
       const subjectName = meta.historySubjectName || (state.currentSubject && state.currentSubject.name) || null;
       const questionCount = state.currentExam.questions.filter(q => {
         if (subjectName && q.subjectName && q.subjectName !== subjectName) return false;
         if (groupType === 'lecture') return q.lectureName === groupName;
         if (groupType === 'year') return q.batchName === groupName;
-        if (groupType === 'ai') return q.lectureName === groupName || q.aiFileName === groupName;
+        if (groupType === 'ai') return (q.lectureName === groupName) || (q.aiFileName === groupName) || (q.groupName === groupName);
         return false;
       }).length;
       return { name: groupName, questionCount };
     }).filter(item => item.questionCount > 0);
   } else {
-    state.currentExam.selectedLecturesWithCounts = [];
+    // إن لم تكن historyGroups متوفرة، نبني القائمة من الأسئلة الحالية (تجميع بحسب lectureName / batchName)
+    const counts = {};
+    state.currentExam.questions.forEach(q => {
+      const key = q.lectureName || q.batchName || q.groupName || 'General';
+      if (!key) return;
+      counts[key] = (counts[key] || 0) + 1;
+    });
+    state.currentExam.selectedLecturesWithCounts = Object.keys(counts).map(k => ({ name: k, questionCount: counts[k] })).filter(i => i.questionCount > 0);
   }
+
   // إظهار أو إخفاء المؤقت وعداد التقدم حسب نمط الامتحان
   const timerEl = el('exam-timer');
   const progressEl = el('exam-progress-compact');
@@ -900,15 +909,15 @@ function startExamSession(questions, mode, direction, sourceLabel, extraMinutes,
   if (mode === 'exam') startTimer();
   scrollQuestionIntoView(false);
 }
-// --- إضافة: وظائف عرض عنوان المادة ونافذة المحاضرات المختارة ---
+// ---------- وظائف عنوان المادة ونافذة المحاضرات المختارة ----------
 function renderExamTitle() {
   if (!state.currentExam) return;
   const subjectNameEl = el('exam-subject-name');
   if (!subjectNameEl) return;
 
-  // اختيار اسم المادة من أولوية: historySubjectName ثم أسئلة الامتحان ثم displayLabel
+  // أولاً نحاول استخلاص الاسم من historySubjectName ثم من أسئلة الامتحان ثم من displayLabel
   const nameFromHistory = state.currentExam.historySubjectName;
-  const nameFromQuestions = state.currentExam.questions && state.currentExam.questions.length ? (state.currentExam.questions.map(q => q.subjectName).filter(Boolean)[0] || null) : null;
+  const nameFromQuestions = (state.currentExam.questions && state.currentExam.questions.length) ? (state.currentExam.questions.map(q => q.subjectName).filter(Boolean)[0] || null) : null;
   const fallbackName = state.currentExam.displayLabel || 'Exam';
   subjectNameEl.textContent = nameFromHistory || nameFromQuestions || fallbackName;
 }
@@ -916,12 +925,10 @@ function renderExamTitle() {
 function toggleExamLecturesPopup() {
   const popup = el('exam-lectures-popup');
   if (!popup) return;
-  // Toggle العرض
   popup.classList.toggle('show');
-
+  // عرض المحتوى عند الفتح
   if (popup.classList.contains('show')) {
     renderExamLecturesList();
-    // إغلاق عند الضغط خارج النافذة
     document.addEventListener('click', closeExamLecturesPopupOnClickOutside);
     document.addEventListener('touchend', closeExamLecturesPopupOnClickOutside);
   } else {
@@ -930,11 +937,11 @@ function toggleExamLecturesPopup() {
   }
 }
 
-function closeExamLecturesPopupOnClickOutside(e) {
+function closeExamLecturesPopupOnClickOutside(ev) {
   const popup = el('exam-lectures-popup');
   const btn = el('exam-help-btn');
   if (!popup) return;
-  if (!popup.contains(e.target) && !(btn && btn.contains(e.target))) {
+  if (!popup.contains(ev.target) && !(btn && btn.contains(ev.target))) {
     popup.classList.remove('show');
     document.removeEventListener('click', closeExamLecturesPopupOnClickOutside);
     document.removeEventListener('touchend', closeExamLecturesPopupOnClickOutside);
@@ -945,32 +952,28 @@ function renderExamLecturesList() {
   const listContainer = el('exam-lectures-list');
   if (!listContainer || !state.currentExam) return;
 
-  // إذا تم حساب selectedLecturesWithCounts أثناء بدء الامتحان فاستخدمها (وتأكد أنها تحتوي عناصر بعد التصفية)
+  // إذا كانت القائمة محسوبة أثناء بدء الامتحان فاعرضها مباشرة
   if (Array.isArray(state.currentExam.selectedLecturesWithCounts) && state.currentExam.selectedLecturesWithCounts.length) {
-    const rows = state.currentExam.selectedLecturesWithCounts.map(item => {
+    listContainer.innerHTML = state.currentExam.selectedLecturesWithCounts.map(item => {
       return `<div class="exam-lecture-item"><div class="exam-lecture-name">${escapeHtml(item.name)}</div><div class="exam-lecture-count">${item.questionCount}</div></div>`;
     }).join('');
-    listContainer.innerHTML = rows || '<div style="color:#aaa;font-style:italic;">No lectures selected</div>';
     return;
   }
 
-  // خلاف ذلك، احسب من الأسئلة الحالية داخل الامتحان: تجميع بحسب lectureName أو batchName أو fallback
+  // خلاف ذلك، بناء من الأسئلة الحالية داخل الامتحان
   const counts = {};
   state.currentExam.questions.forEach(q => {
-    const lectureKey = q.lectureName || q.batchName || q.groupName || 'General';
-    if (!lectureKey) return;
-    counts[lectureKey] = (counts[lectureKey] || 0) + 1;
+    const key = q.lectureName || q.batchName || q.groupName || 'General';
+    if (!key) return;
+    counts[key] = (counts[key] || 0) + 1;
   });
 
-  const entries = Object.keys(counts).map(name => ({ name, questionCount: counts[name] })).filter(item => item.questionCount > 0);
-
+  const entries = Object.keys(counts).map(k => ({ name: k, questionCount: counts[k] })).filter(i => i.questionCount > 0);
   if (!entries.length) {
     listContainer.innerHTML = '<div style="color:#aaa;font-style:italic;">No lectures selected</div>';
     return;
   }
-
-  const html = entries.map(item => `<div class="exam-lecture-item"><div class="exam-lecture-name">${escapeHtml(item.name)}</div><div class="exam-lecture-count">${item.questionCount}</div></div>`).join('');
-  listContainer.innerHTML = html;
+  listContainer.innerHTML = entries.map(item => `<div class="exam-lecture-item"><div class="exam-lecture-name">${escapeHtml(item.name)}</div><div class="exam-lecture-count">${item.questionCount}</div></div>`).join('');
 }
 function renderExamTitle() {
   if (!state.currentExam) return;
@@ -1040,16 +1043,17 @@ function renderOptionButton(opt, i, idx, showAnswerState, selectedIndex, correct
 function renderExam(){
   if(!state.currentExam) return;
 
-  // عرض عنوان المادة أعلى الصفحة
+  // عرض عنوان المادة (يجب أن يظهر قبل أي محتوى آخر)
   renderExamTitle();
 
-  const t=theme();
-  const questions=state.currentExam.questions;
-  const idx=state.currentExam.currentIndex;
-  const q=questions[idx];
+  const t = theme();
+  const questions = state.currentExam.questions;
+  const idx = state.currentExam.currentIndex;
+  const q = questions[idx];
   if(!q) return;
   const progressEl = el('exam-progress-compact');
   const timerEl = el('exam-timer');
+
   if(state.currentExam.mode === 'training'){
     const answered = state.currentExam.firstAnswers.filter(x => x !== null).length;
     const correct = state.currentExam.firstAnswers.filter((ans, i) => ans !== null && isAnswerCorrect(questions[i], ans)).length;
@@ -1063,13 +1067,18 @@ function renderExam(){
     if(progressEl) progressEl.classList.add('hidden');
     if(timerEl) timerEl.classList.remove('hidden');
   }
+
   renderGrid();
-  const correctIdx=getCorrectIndex(q);
-  const showAnswerState=state.currentExam.mode==='training' && state.currentExam.showAnswer;
-  const fav=state.favorites.includes(q.id);
+
+  const correctIdx = getCorrectIndex(q);
+  const showAnswerState = state.currentExam.mode === 'training' && state.currentExam.showAnswer;
+  const fav = state.favorites.includes(q.id);
   const answerSummaryHtml = showAnswerState ? `<div class="answer-summary"><strong>Correct Answer:</strong> <span class="answer-value">${escapeHtml(getFormattedCurrentCorrectAnswer(q))}</span></div>` : '';
-  el('question-container').innerHTML=`<div class="question-header"><span class="question-number">Q${escapeHtml(q.number||String(idx+1))}</span><div class="question-actions"><button class="icon-btn ${fav?'active':''}" onclick="toggleFavorite('${q.id}')">💚</button><button class="icon-btn" onclick="toggleQuestionLocation()">${t.icons.location}</button></div></div><p class="question-text">${escapeHtml(q.text)}</p><div class="options-list">${q.options.map((opt,i)=>renderOptionButton(opt,i,idx,showAnswerState,state.currentExam.answers[idx],correctIdx)).join('')}</div>${answerSummaryHtml}<div class="explanation-box ${showAnswerState?'visible':''}"><strong>Explanation:</strong> ${escapeHtml(q.explanation||'No explanation available.')}</div>${renderRemoveWrongBtn()}`;
+
+  el('question-container').innerHTML = `<div class="question-header"><span class="question-number">Q${escapeHtml(q.number||String(idx+1))}</span><div class="question-actions"><button class="icon-btn ${fav?'active':''}" onclick="toggleFavorite('${q.id}')">💚</button><button class="icon-btn" onclick="toggleQuestionLocation()">${t.icons.location}</button></div></div><p class="question-text">${escapeHtml(q.text)}</p><div class="options-list">${q.options.map((opt,i)=>renderOptionButton(opt,i,idx,showAnswerState,state.currentExam.answers[idx],correctIdx)).join('')}</div>${answerSummaryHtml}<div class="explanation-box ${showAnswerState?'visible':''}"><strong>Explanation:</strong> ${escapeHtml(q.explanation||'No explanation available.')}</div>${renderRemoveWrongBtn()}`;
+
   el('question-container').classList.add('exam-content-ltr');
+
   renderExamNav();
 }
 function renderGrid(){ if(!state.currentExam) return; const grid=el('question-grid'); grid.innerHTML=''; state.currentExam.questions.forEach((q,idx)=>{ let cls='grid-btn'; if(idx===state.currentExam.currentIndex) cls+=' current'; else if(state.currentExam.answers[idx]!==null){ if(state.currentExam.mode==='training' && state.currentExam.firstAnswers[idx]!==null) cls+=isAnswerCorrect(q,state.currentExam.firstAnswers[idx])?' answered':' wrong'; else cls+=' answered'; } if(state.currentExam.direction==='oneway' && idx<state.currentExam.currentIndex) cls+=' disabled'; const btn=document.createElement('button'); btn.className=cls; btn.textContent=String(idx+1); btn.onclick=()=>navigateToQuestion(idx); grid.appendChild(btn); }); }
