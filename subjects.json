@@ -32,7 +32,36 @@
             "correctIndices": [],
             "isMultiple": false,
             "correctAnswerLetter": "B",
-            "explanation": "###",
+            "explanation": "",
+            "batchName": "",
+            "pageNumber": "",
+            "subjectName": "Introduction",
+            "subjectId": "introduction",
+            "lectureName": "Cornea , sclera , previous , medical , Iris",
+            "groupName": "Cornea , sclera , previous , medical , Iris",
+            "sourceType": "lecture"
+          },
+          {
+            "id": "introduction__lecture__cornea-sclera-previous-medical-iris__2__unkm8d",
+            "number": "2",
+            "text": "~Choose the correct answer~ What ?",
+            "options": [
+              "no",
+              "yes",
+              "oh"
+            ],
+            "originalOptions": [
+              "no",
+              "yes",
+              "oh"
+            ],
+            "correctAnswer": "B) yes / C) oh",
+            "correctAnswerText": "yes",
+            "correctIndex": 1,
+            "correctIndices": [],
+            "isMultiple": false,
+            "correctAnswerLetter": "B",
+            "explanation": "its yes ...",
             "batchName": "",
             "pageNumber": "",
             "subjectName": "Introduction",
@@ -553,7 +582,36 @@
         "correctIndices": [],
         "isMultiple": false,
         "correctAnswerLetter": "B",
-        "explanation": "###",
+        "explanation": "",
+        "batchName": "",
+        "pageNumber": "",
+        "subjectName": "Introduction",
+        "subjectId": "introduction",
+        "lectureName": "Cornea , sclera , previous , medical , Iris",
+        "groupName": "Cornea , sclera , previous , medical , Iris",
+        "sourceType": "lecture"
+      },
+      {
+        "id": "introduction__lecture__cornea-sclera-previous-medical-iris__2__unkm8d",
+        "number": "2",
+        "text": "~Choose the correct answer~ What ?",
+        "options": [
+          "no",
+          "yes",
+          "oh"
+        ],
+        "originalOptions": [
+          "no",
+          "yes",
+          "oh"
+        ],
+        "correctAnswer": "B) yes / C) oh",
+        "correctAnswerText": "yes",
+        "correctIndex": 1,
+        "correctIndices": [],
+        "isMultiple": false,
+        "correctAnswerLetter": "B",
+        "explanation": "its yes ...",
         "batchName": "",
         "pageNumber": "",
         "subjectName": "Introduction",
@@ -1029,7 +1087,7 @@
         "sourceType": "lecture"
       }
     ],
-    "totalQuestions": 15,
+    "totalQuestions": 16,
     "totalLectures": 3,
     "hasAiFolder": false
   }
