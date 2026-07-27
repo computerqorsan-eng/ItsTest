@@ -381,23 +381,42 @@
     <script src="script.js"></script>
   <script src="script_patch.js"></script>
   <script>
-        function selectAllCurrentItemsAndStart() {
+            function selectAllCurrentItemsAndStart() {
         if (typeof state !== 'undefined' && state.currentGroups && state.currentGroups.length > 0) {
-            state.selectedGroups = state.currentGroups.map((_, index) => index);
+            const allSelected = state.selectedGroups.length === state.currentGroups.length;
+            
+            if (allSelected) {
+                state.selectedGroups = [];
+            } else {
+                state.selectedGroups = state.currentGroups.map((_, index) => index);
+            }
+            
+            // تحديث نص وزر "تحديد الكل / إلغاء تحديد الكل" ديناميكياً
+            const btns = document.querySelectorAll('button');
+            btns.forEach(b => {
+                if (b.textContent.includes('تحديد الكل') || b.textContent.includes('إلغاء تحديد الكل')) {
+                    b.textContent = allSelected ? 'تحديد الكل' : 'إلغاء تحديد الكل';
+                }
+            });
+
             if (typeof renderSelectionScreenWithEnhancements === 'function') {
                 renderSelectionScreenWithEnhancements();
             } else if (typeof renderSelectionList === 'function') {
                 renderSelectionList();
             }
+            
             const footer = document.getElementById('selection-footer');
             if (footer) {
-                footer.classList.remove('hidden');
-                if (typeof updateSelectionFooter === 'function') updateSelectionFooter();
-                footer.scrollIntoView({ behavior: 'smooth' });
+                if (state.selectedGroups.length > 0) {
+                    footer.classList.remove('hidden');
+                    if (typeof updateSelectionFooter === 'function') updateSelectionFooter();
+                    footer.scrollIntoView({ behavior: 'smooth' });
+                } else {
+                    footer.classList.add('hidden');
+                }
             }
         }
     }
-
     if (typeof state !== 'undefined' && !state.flaggedQuestions) {
         state.flaggedQuestions = {}; 
     }
