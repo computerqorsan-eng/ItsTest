@@ -1,6 +1,15 @@
 <!DOCTYPE html>
 <html lang="ar" dir="rtl">
 <head>
+  <!-- Google tag (gtag.js) -->
+<script async src="https://www.googletagmanager.com/gtag/js?id=G-YDZY1DJVQ6"></script>
+<script>
+  window.dataLayer = window.dataLayer || [];
+  function gtag(){dataLayer.push(arguments);}
+  gtag('js', new Date());
+
+  gtag('config', 'G-YDZY1DJVQ6');
+</script>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
   <title>Medical Exam Practice</title>
@@ -128,8 +137,19 @@
       min-width: 280px;
       border: 1px solid rgba(255,255,255,0.2);
     }
-    .exam-lectures-popup.show {
+        .exam-lectures-popup.show {
       display: block;
+    }
+    .flag-triangle {
+      position: absolute;
+      top: 0;
+      right: 0;
+      width: 0;
+      height: 0;
+      border-top: 18px solid #ef4444;
+      border-left: 18px solid transparent;
+      pointer-events: none;
+      z-index: 10;
     }
   </style>
 </head>
@@ -239,8 +259,9 @@
     </div>
 
     <div id="selection-screen" class="screen">
-      <div class="screen-header"><button class="btn-back" onclick="backFromSelection()">← رجوع</button><h3 id="selection-title">Select</h3></div>
+           <div class="screen-header"><button class="btn-back" onclick="backFromSelection()">← رجوع</button><h3 id="selection-title">Select</h3></div>
       <div id="selection-search-container" class="search-container compact-search hidden"><input type="text" id="selection-search" placeholder="ابحث..." oninput="filterSelectionList()"></div>
+      <button id="btn-select-all-lectures" class="btn-secondary hidden" style="width: calc(100% - 32px); margin: 0 auto 12px auto; display: block; border: 2px solid var(--border-color); border-radius: 8px; padding: 10px; font-weight: bold; background: var(--bg-card); color: var(--text-color); cursor: pointer;" onclick="selectAllCurrentItemsAndStart()">تحديد الكل</button>
       <div id="selection-list" class="selection-list"></div>
       <div id="selection-footer" class="selection-footer hidden">
         <div class="footer-info"><p id="selected-count">0 questions selected</p></div>
@@ -353,11 +374,133 @@
   <div id="toast" class="toast hidden"></div>
   <canvas id="fireworks-canvas" class="fireworks-canvas hidden"></canvas>
   <audio id="bg-audio" preload="auto" loop></audio>
-  <audio id="right-audio" preload="auto"></audio>
-  <audio id="wrong-audio" preload="auto"></audio>
+    <audio id="right-audio" src="right.mp3" preload="auto"></audio>
+  <audio id="wrong-audio" src="wrong.mp3" preload="auto"></audio>
   <audio id="celebrate-audio" preload="auto"></audio>
   <audio id="seconds-audio" preload="auto"></audio>
-  <script src="script.js"></script>
+    <script src="script.js"></script>
   <script src="script_patch.js"></script>
+  <script>
+    function selectAllCurrentItemsAndStart() {
+        if (typeof state !== 'undefined' && state.currentGroups && state.currentGroups.length > 0) {
+            state.selectedGroups = state.currentGroups.slice();
+            if (typeof renderSelectionList === 'function') renderSelectionList();
+            const footer = document.getElementById('selection-footer');
+            if (footer) {
+                footer.classList.remove('hidden');
+                if (typeof updateSelectionFooter === 'function') updateSelectionFooter();
+                footer.scrollIntoView({ behavior: 'smooth' });
+            }
+        }
+    }
+
+    if (typeof state !== 'undefined' && !state.flaggedQuestions) {
+        state.flaggedQuestions = {}; 
+    }
+
+    function toggleFlag(qId) {
+        if (!state.currentExam) return;
+        if (!state.currentExam.flagged) state.currentExam.flagged = {};
+        
+        state.currentExam.flagged[qId] = !state.currentExam.flagged[qId];
+        const isFlagged = state.currentExam.flagged[qId];
+        
+        const btn = document.getElementById(`flag-btn-${qId}`);
+        if (btn) btn.textContent = isFlagged ? '🚩' : '🏳️';
+        
+        const qIndex = state.currentExam.questions.findIndex(q => q.id === qId);
+        if (qIndex !== -1) {
+            const navItem = document.getElementById(`nav-q-${qIndex}`);
+            if (navItem) {
+                navItem.style.position = 'relative';
+                let tri = navItem.querySelector('.flag-triangle');
+                if (isFlagged) {
+                    if (!tri) {
+                        tri = document.createElement('div');
+                        tri.className = 'flag-triangle';
+                        navItem.appendChild(tri);
+                    }
+                } else {
+                    if (tri) tri.remove();
+                }
+            }
+        }
+        
+        if (typeof saveExamState === 'function') saveExamState();
+    }
+
+    const customAppObserver = new MutationObserver((mutations) => {
+        const selectionList = document.getElementById('selection-list');
+        if (selectionList) {
+            const manageBtns = selectionList.querySelectorAll('button.btn-secondary.btn-mini');
+            manageBtns.forEach(btn => {
+                if (btn.textContent.trim() === 'تحديد الكل') {
+                    btn.textContent = 'إعادة / إكمال الإنجاز';
+                }
+            });
+        }
+
+        const searchContainer = document.getElementById('selection-search-container');
+        const selectAllBtn = document.getElementById('btn-select-all-lectures');
+        if (searchContainer && selectAllBtn) {
+            if (!searchContainer.classList.contains('hidden')) {
+                selectAllBtn.classList.remove('hidden');
+            } else {
+                selectAllBtn.classList.add('hidden');
+            }
+        }
+
+        const favBtns = document.querySelectorAll('button[onclick*="toggleFavorite"]');
+        favBtns.forEach(favBtn => {
+            if (!favBtn.nextElementSibling || !favBtn.nextElementSibling.classList.contains('flag-btn-added')) {
+                const match = favBtn.getAttribute('onclick').match(/'([^']+)'/);
+                if (match) {
+                    const qId = match[1];
+                    const isFlagged = state && state.currentExam && state.currentExam.flagged && state.currentExam.flagged[qId];
+                    
+                    const flagBtn = document.createElement('button');
+                    flagBtn.className = 'btn-icon flag-btn-added';
+                    flagBtn.id = `flag-btn-${qId}`;
+                    flagBtn.style.cssText = 'background: none; border: none; font-size: 1.2em; cursor: pointer; margin-right: 4px; margin-left: 4px;';
+                    flagBtn.textContent = isFlagged ? '🚩' : '🏳️';
+                    flagBtn.title = 'تحديد السؤال';
+                    flagBtn.onclick = function() { toggleFlag(qId); };
+                    
+                    favBtn.parentNode.insertBefore(flagBtn, favBtn.nextSibling);
+                }
+            }
+        });
+
+        if (state && state.currentExam && state.currentExam.flagged) {
+            state.currentExam.questions.forEach((q, index) => {
+                if (state.currentExam.flagged[q.id]) {
+                    const navItem = document.getElementById(`nav-q-${index}`);
+                    if (navItem && !navItem.querySelector('.flag-triangle')) {
+                        navItem.style.position = 'relative';
+                        const tri = document.createElement('div');
+                        tri.className = 'flag-triangle';
+                        navItem.appendChild(tri);
+                    }
+                }
+            });
+        }
+
+        const reviewContainer = document.getElementById('results-review');
+        if (reviewContainer && !reviewContainer.classList.contains('hidden') && state && state.currentExam && state.currentExam.flagged) {
+            const questionHeaders = reviewContainer.querySelectorAll('h4');
+            questionHeaders.forEach((header, index) => {
+                if (!header.hasAttribute('data-flag-checked')) {
+                    header.setAttribute('data-flag-checked', 'true');
+                    const q = state.currentExam.questions[index];
+                    if (q && state.currentExam.flagged[q.id]) {
+                        header.innerHTML += ' <span style="font-size: 1.1em; margin-right: 5px;">🔻</span>';
+                    }
+                }
+            });
+        }
+    });
+
+    customAppObserver.observe(document.body, { childList: true, subtree: true });
+  </script>
 </body>
-</html>
+  </html>
