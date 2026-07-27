@@ -381,10 +381,14 @@
     <script src="script.js"></script>
   <script src="script_patch.js"></script>
   <script>
-    function selectAllCurrentItemsAndStart() {
+        function selectAllCurrentItemsAndStart() {
         if (typeof state !== 'undefined' && state.currentGroups && state.currentGroups.length > 0) {
-            state.selectedGroups = state.currentGroups.slice();
-            if (typeof renderSelectionList === 'function') renderSelectionList();
+            state.selectedGroups = state.currentGroups.map((_, index) => index);
+            if (typeof renderSelectionScreenWithEnhancements === 'function') {
+                renderSelectionScreenWithEnhancements();
+            } else if (typeof renderSelectionList === 'function') {
+                renderSelectionList();
+            }
             const footer = document.getElementById('selection-footer');
             if (footer) {
                 footer.classList.remove('hidden');
@@ -398,7 +402,7 @@
         state.flaggedQuestions = {}; 
     }
 
-    function toggleFlag(qId) {
+        function toggleFlag(qId) {
         if (!state.currentExam) return;
         if (!state.currentExam.flagged) state.currentExam.flagged = {};
         
@@ -410,15 +414,16 @@
         
         const qIndex = state.currentExam.questions.findIndex(q => q.id === qId);
         if (qIndex !== -1) {
-            const navItem = document.getElementById(`nav-q-${qIndex}`);
-            if (navItem) {
-                navItem.style.position = 'relative';
-                let tri = navItem.querySelector('.flag-triangle');
+            const gridItem = document.querySelector(`#question-grid button:nth-child(${qIndex + 1})`);
+            if (gridItem) {
+                gridItem.style.position = 'relative';
+                gridItem.style.overflow = 'hidden';
+                let tri = gridItem.querySelector('.flag-triangle');
                 if (isFlagged) {
                     if (!tri) {
                         tri = document.createElement('div');
                         tri.className = 'flag-triangle';
-                        navItem.appendChild(tri);
+                        gridItem.appendChild(tri);
                     }
                 } else {
                     if (tri) tri.remove();
@@ -471,15 +476,16 @@
             }
         });
 
-        if (state && state.currentExam && state.currentExam.flagged) {
+                if (state && state.currentExam && state.currentExam.flagged) {
             state.currentExam.questions.forEach((q, index) => {
                 if (state.currentExam.flagged[q.id]) {
-                    const navItem = document.getElementById(`nav-q-${index}`);
-                    if (navItem && !navItem.querySelector('.flag-triangle')) {
-                        navItem.style.position = 'relative';
+                    const gridItem = document.querySelector(`#question-grid button:nth-child(${index + 1})`);
+                    if (gridItem && !gridItem.querySelector('.flag-triangle')) {
+                        gridItem.style.position = 'relative';
+                        gridItem.style.overflow = 'hidden';
                         const tri = document.createElement('div');
                         tri.className = 'flag-triangle';
-                        navItem.appendChild(tri);
+                        gridItem.appendChild(tri);
                     }
                 }
             });
