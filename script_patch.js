@@ -473,7 +473,7 @@
     toolbar = document.createElement('div');
     toolbar.id = 'selection-bulk-toolbar';
     toolbar.className = 'selection-bulk-toolbar hidden';
-    toolbar.innerHTML = '<button class="btn-secondary" onclick="openSelectionBulkDialog()">تحديد الكل</button><button class="btn-secondary" onclick="restoreCurrentSelectionOriginalOrder()">العودة للترتيب الأصلي</button>';
+    toolbar.innerHTML = '<button class="btn-secondary" onclick="openSelectionBulkDialog()">إعادة / إكمال الإنجاز</button><button class="btn-secondary" onclick="restoreCurrentSelectionOriginalOrder()">العودة للترتيب الأصلي</button>';
     const search = el('selection-search-container');
     const screen = el('selection-screen');
     if(search && search.parentNode) search.parentNode.insertBefore(toolbar, search);
@@ -1108,12 +1108,13 @@
       const correctIdx=getCorrectIndex(q);
       const unanswered = userAnswer===null || (Array.isArray(userAnswer) && userAnswer.length === 0);
       const ok = window.isAnswerCorrect ? window.isAnswerCorrect(q, userAnswer) : userAnswer===correctIdx;
-      const statusColor = unanswered ? 'var(--text-muted)' : (ok?'var(--success)':'var(--danger)');
+            const statusColor = unanswered ? 'var(--text-muted)' : (ok?'var(--success)':'var(--danger)');
       const statusLabel = unanswered ? 'You didn\'t answer it' : (ok ? theme().icons.success+' Correct' : theme().icons.error+' Wrong');
       
       const { text: cleanText, imageHtml } = formatQuestionTextWithImage(q.text);
+      const isFlagged = state.currentExam && state.currentExam.flagged && state.currentExam.flagged[q.id];
 
-      html += `<div class="question-container review-question-card mt-10" style="border-inline-start:4px solid ${statusColor};"><div class="question-header"><span class="question-number">Q${idx+1}</span><span style="color:${statusColor};font-weight:900;">${statusLabel}</span></div><p class="question-text">${escapeHtml(cleanText)}</p>${imageHtml}<div class="options-list">${q.options.map((opt,i)=>{
+      html += `<div class="question-container review-question-card mt-10" style="border-inline-start:4px solid ${statusColor};"><div class="question-header"><span class="question-number">Q${idx+1}${isFlagged ? ' <span style="font-size: 1.1em; margin-right: 5px;">🔻</span>' : ''}</span><span style="color:${statusColor};font-weight:900;">${statusLabel}</span></div><p class="question-text">${escapeHtml(cleanText)}</p>${imageHtml}<div class="options-list">${q.options.map((opt,i)=>{
         if (q.isMultiple) {
           let isCorr = q.correctIndices && q.correctIndices.includes(i);
           let isChecked = Array.isArray(userAnswer) && userAnswer.includes(i);
